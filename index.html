@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Om Jewellers - Billing & Inventory Management</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <style>
+    :root {
+      --primary: #9b783e;
+      --primary-dark: #6e5428;
+      --bg: #f8f6f0;
+      --surface: #ffffff;
+      --border: #e2d9cc;
+      --text: #2c2523;
+      --text-muted: #6b635b;
+      --accent-red: #c0392b;
+      --whatsapp: #25d366;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+    body { background-color: var(--bg); color: var(--text); padding-bottom: 50px; }
+
+    header {
+      background: linear-gradient(135deg, #1f1a17, #2c2523);
+      color: #fff;
+      padding: 1.5rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 3px solid var(--primary);
+    }
+
+    header h1 {
+      font-family: 'Cinzel', serif;
+      letter-spacing: 2px;
+      color: #dfba73;
+    }
+
+    .nav-tabs { display: flex; gap: 10px; }
+
+    .tab-btn {
+      background: transparent;
+      border: 1px solid var(--primary);
+      color: #dfba73;
+      padding: 8px 18px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+
+    .tab-btn.active, .tab-btn:hover {
+      background: var(--primary);
+      color: white;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+    }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.5rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+      margin-bottom: 1.5rem;
+    }
+
+    .section-title {
+      font-family: 'Cinzel', serif;
+      font-size: 1.25rem;
+      color: var(--primary-dark);
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
+
+    .form-group {
+      margin-bottom: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    label { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); }
+    input, select {
+      padding: 9px 12px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-size: 0.95rem;
+      outline: none;
+    }
+    input:focus, select:focus { border-color: var(--primary); }
+
+    .btn {
+      padding: 10px 18px;
+      border-radius: 4px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: background 0.2s;
+    }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-primary:hover { background: var(--primary-dark); }
+    .btn-whatsapp { background: var(--whatsapp); color: white; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+    .btn-whatsapp:hover { background: #1ebe57; }
+    .btn-danger { background: var(--accent-red); color: white; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+    }
+
+    th, td {
+      border: 1px solid var(--border);
+      padding: 10px;
+      text-align: left;
+      font-size: 0.9rem;
+    }
+
+    th { background: #faf8f5; font-weight: 600; }
+
+    .action-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 1.5rem;
+    }
+
+    @media print {
+      body * { visibility: hidden; }
+      #printable-invoice, #printable-invoice * { visibility: visible; }
+      #printable-invoice {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        margin: 0;
+        padding: 20px;
+        border: none;
+        box-shadow: none;
+      }
+      .no-print { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div>
+      <h1>OM JEWELLERS</h1>
+      <small style="color: #bbb;">Billing & Stock Desk</small>
+    </div>
+    <div class="nav-tabs no-print">
+      <button class="tab-btn active" onclick="switchTab('billing')">Billing Pad</button>
+      <button class="tab-btn" onclick="switchTab('inventory')">Stock Manager</button>
+      <button class="tab-btn" onclick="switchTab('history')">Bill History</button>
+    </div>
+  </header>
+
+  <div class="container">
+    <!-- BILLING SECTION -->
+    <div id="billing-tab" class="tab-content active">
+      
+      <!-- Daily Rate Controller Box -->
+      <div class="card no-print">
+        <div class="section-title">Daily Metal Rates Board (Set Once Per Day)</div>
+        <div class="grid-3">
+          <div class="form-group">
+            <label>Base 24K Gold Rate / gram (₹)</label>
+            <input type="number" id="base-24k-rate" value="7400" oninput="calculatePurityRates()">
+          </div>
+          <div class="form-group">
+            <label>Silver Rate / gram (₹)</label>
+            <input type="number" id="base-silver-rate" value="90" oninput="updateSilverRate()">
+          </div>
+          <div class="form-group" style="justify-content: flex-end;">
+            <button class="btn btn-primary" style="margin-top: auto;" onclick="lockDailyRates()">Rates Locked for Today ✓</button>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-wrap: wrap; gap: 15px; margin-top: 12px; font-size: 0.85rem; color: var(--text-muted); background: #faf8f5; padding: 12px; border-radius: 4px;">
+          <div><strong>24K (99.9%):</strong> ₹<span id="rate-display-24k">7400</span>/g</div>
+          <div><strong>22K (91.6%):</strong> ₹<span id="rate-display-22k">6778</span>/g</div>
+          <div><strong>20K (83.3%):</strong> ₹<span id="rate-display-20k">6164</span>/g</div>
+          <div><strong>18K (75.0%):</strong> ₹<span id="rate-display-18k">5550</span>/g</div>
+          <div><strong>14K (58.5%):</strong> ₹<span id="rate-display-14k">4329</span>/g</div>
+          <div><strong>Silver (925):</strong> ₹<span id="rate-display-silver">90</span>/g</div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <!-- Input Form -->
+        <div class="card no-print">
+          <div class="section-title">Invoice Generator</div>
+          <div class="grid-2">
+            <div class="form-group">
+              <label>Customer Name</label>
+              <input type="text" id="cust-name" placeholder="Ramesh Sharma" oninput="updateCustomerMeta()">
+            </div>
+            <div class="form-group">
+              <label>Phone Number (10 digits)</label>
+              <input type="text" id="cust-phone" placeholder="98XXXXXXXX" oninput="updateCustomerMeta()">
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="form-group">
+              <label>Select Purity / Metal</label>
+              <select id="item-purity">
+                <option value="Gold 22K">Gold 22K (91.6%)</option>
+                <option value="Gold 24K">Gold 24K (99.9%)</option>
+                <option value="Gold 20K">Gold 20K (83.3%)</option>
+                <option value="Gold 18K">Gold 18K (75.0%)</option>
+                <option value="Gold 14K">Gold 14K (58.5%)</option>
+                <option value="Silver 925">Silver</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Item Name</label>
+              <input type="text" id="item-name" placeholder="Necklace / Ring / Bangles">
+            </div>
+          </div>
+
+          <div class="grid-3">
+            <div class="form-group">
+              <label>Gross Wt (g)</label>
+              <input type="number" step="0.001" id="gross-wt" placeholder="10.500">
+            </div>
+            <div class="form-group">
+              <label>Stone/Beads Wt (g)</label>
+              <input type="number" step="0.001" id="stone-wt" value="0">
+            </div>
+            <div class="form-group">
+              <label>Making Charges / g (₹)</label>
+              <input type="number" id="making-charge" value="450">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>GST Rate (%)</label>
+            <input type="number" id="gst-rate" value="3">
+          </div>
+
+          <button class="btn btn-primary" style="width: 100%; margin-top: 10px;" onclick="addItemToInvoice()">Add Item to Bill</button>
+        </div>
+
+        <!-- Printable Bill Preview -->
+        <div class="card" id="printable-invoice">
+          <div style="text-align: center; margin-bottom: 1.2rem; border-bottom: 2px solid var(--border); padding-bottom: 10px;">
+            <h2 style="font-family: 'Cinzel', serif; letter-spacing: 1px;">OM JEWELLERS</h2>
+            <p style="font-size: 0.85rem; color: var(--text-muted);">Main Market Road • GSTIN: 23AAAAA0000A1Z5</p>
+            <p style="font-size: 0.85rem; color: var(--text-muted);">Retail Estimate / Tax Invoice</p>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 1rem;">
+            <div>
+              <strong>Billed To:</strong> <span id="bill-cust-name">-</span><br>
+              <strong>Contact:</strong> <span id="bill-cust-phone">-</span>
+            </div>
+            <div style="text-align: right;">
+              <strong>Date:</strong> <span id="bill-date"></span><br>
+              <strong>Time:</strong> <span id="bill-time"></span><br>
+              <strong>Invoice #:</strong> <span id="bill-no">OJ-1001</span>
+            </div>
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th>Item & Purity</th>
+                <th>Net Wt</th>
+                <th>Rate/g</th>
+                <th>Making</th>
+                <th>Total (₹)</th>
+              </tr>
+            </thead>
+            <tbody id="invoice-items"></tbody>
+          </table>
+
+          <div style="margin-top: 1.2rem; text-align: right; line-height: 1.6;">
+            <div>Subtotal: ₹<span id="bill-subtotal">0.00</span></div>
+            <div>GST (3%): ₹<span id="bill-gst">0.00</span></div>
+            <div style="font-size: 1.2rem; font-weight: 700; color: var(--primary-dark); margin-top: 5px;">
+              Grand Total: ₹<span id="bill-total">0.00</span>
+            </div>
+          </div>
+
+          <!-- Warm Regards Footer for Print -->
+          <div style="margin-top: 2rem; text-align: center; border-top: 1px dashed var(--border); padding-top: 1rem;">
+            <p style="font-size: 0.9rem; color: var(--text-muted); font-style: italic;">"Thank you for choosing us. We look forward to serving you again!"</p>
+            <h4 style="font-family: 'Cinzel', serif; color: var(--primary-dark); margin-top: 6px; letter-spacing: 1px;">Warm Regards, OM JEWELLERS</h4>
+          </div>
+
+          <div class="action-row no-print">
+            <button class="btn btn-primary" style="flex: 1;" onclick="handlePrintBill()">🖨️ Print & Save Bill</button>
+            <button class="btn btn-whatsapp" id="send-wa-btn" style="flex: 1.5;" onclick="sendPDFDirectToWhatsApp()">
+              🚀 Send PDF via WhatsApp
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- INVENTORY SECTION -->
+    <div id="inventory-tab" class="tab-content">
+      <div class="card">
+        <div class="section-title">Add Stock Entry</div>
+        <div class="grid-4">
+          <div class="form-group">
+            <label>Tag / SKU #</label>
+            <input type="text" id="inv-tag" placeholder="101">
+          </div>
+          <div class="form-group">
+            <label>Item Name</label>
+            <input type="text" id="inv-name" placeholder="20K Ring / 22K Chain">
+          </div>
+          <div class="form-group">
+            <label>Category</label>
+            <select id="inv-cat">
+              <option value="Gold 22K">Gold 22K</option>
+              <option value="Gold 20K">Gold 20K</option>
+              <option value="Gold 18K">Gold 18K</option>
+              <option value="Silver">Silver</option>
+              <option value="Diamond">Diamond</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Total Wt (g)</label>
+            <input type="number" step="0.001" id="inv-wt" placeholder="12.450">
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="addStock()">Save to Stock</button>
+      </div>
+
+      <div class="card">
+        <div class="section-title">Current In-Store Stock</div>
+        <table>
+          <thead>
+            <tr>
+              <th>Tag #</th>
+              <th>Item</th>
+              <th>Category</th>
+              <th>Weight (g)</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="stock-list"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- BILL HISTORY SECTION -->
+    <div id="history-tab" class="tab-content">
+      <div class="card">
+        <div class="section-title">Generated Bills History / Sales Ledger</div>
+        <table>
+          <thead>
+            <tr>
+              <th>Invoice #</th>
+              <th>Date & Time</th>
+              <th>Customer Name</th>
+              <th>Phone</th>
+              <th>Items Count</th>
+              <th>Grand Total (₹)</th>
+            </tr>
+          </thead>
+          <tbody id="history-list"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let inventory = [];
+    let billHistory = [];
+    let invoiceItems = [];
+    let currentInvoiceNo = 'OJ-1001';
+
+    async function loadData() {
+      try {
+        const response = await fetch('/api/data');
+        const data = await response.json();
+        if (data.inventory) {
+          inventory = data.inventory;
+          renderStock();
+        }
+        if (data.bills) {
+          billHistory = data.bills;
+          renderHistory();
+          if (billHistory.length > 0) {
+            currentInvoiceNo = `OJ-${1001 + billHistory.length}`;
+            document.getElementById('bill-no').textContent = currentInvoiceNo;
+          }
+        }
+      } catch (e) {
+        console.log('Using local fallback state');
+      }
+    }
+
+    async function saveData() {
+      try {
+        await fetch('/api/data', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ inventory, bills: billHistory })
+        });
+      } catch (e) {
+        console.error('Failed to sync with backend');
+      }
+    }
+
+    loadData();
+
+    function updateDateTime() {
+      const now = new Date();
+      document.getElementById('bill-date').textContent = now.toLocaleDateString();
+      document.getElementById('bill-time').textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+    updateDateTime();
+    setInterval(updateDateTime, 30000);
+
+    let calculatedRates = {
+      'Gold 24K': 7400,
+      'Gold 22K': 6778,
+      'Gold 20K': 6164,
+      'Gold 18K': 5550,
+      'Gold 14K': 4329,
+      'Silver 925': 90
+    };
+
+    function calculatePurityRates() {
+      const rate24k = parseFloat(document.getElementById('base-24k-rate').value) || 0;
+      calculatedRates['Gold 24K'] = rate24k;
+      calculatedRates['Gold 22K'] = Math.round(rate24k * 0.916);
+      calculatedRates['Gold 20K'] = Math.round(rate24k * 0.833);
+      calculatedRates['Gold 18K'] = Math.round(rate24k * 0.750);
+      calculatedRates['Gold 14K'] = Math.round(rate24k * 0.585);
+
+      document.getElementById('rate-display-24k').textContent = calculatedRates['Gold 24K'];
+      document.getElementById('rate-display-22k').textContent = calculatedRates['Gold 22K'];
+      document.getElementById('rate-display-20k').textContent = calculatedRates['Gold 20K'];
+      document.getElementById('rate-display-18k').textContent = calculatedRates['Gold 18K'];
+      document.getElementById('rate-display-14k').textContent = calculatedRates['Gold 14K'];
+    }
+
+    function updateSilverRate() {
+      const silverRate = parseFloat(document.getElementById('base-silver-rate').value) || 0;
+      calculatedRates['Silver 925'] = silverRate;
+      document.getElementById('rate-display-silver').textContent = silverRate;
+    }
+
+    function lockDailyRates() {
+      alert("Today's metal rates have been locked and saved for all bills!");
+    }
+
+    function switchTab(tab) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+      if(tab === 'billing') {
+        document.getElementById('billing-tab').classList.add('active');
+        document.querySelectorAll('.tab-btn')[0].classList.add('active');
+      } else if(tab === 'inventory') {
+        document.getElementById('inventory-tab').classList.add('active');
+        document.querySelectorAll('.tab-btn')[1].classList.add('active');
+      } else {
+        document.getElementById('history-tab').classList.add('active');
+        document.querySelectorAll('.tab-btn')[2].classList.add('active');
+      }
+    }
+
+    function updateCustomerMeta() {
+      document.getElementById('bill-cust-name').textContent = document.getElementById('cust-name').value || 'Walk-in Customer';
+      document.getElementById('bill-cust-phone').textContent = document.getElementById('cust-phone').value || '-';
+    }
+
+    function addItemToInvoice() {
+      const purity = document.getElementById('item-purity').value;
+      const itemName = document.getElementById('item-name').value || 'Ornament';
+      const gross = parseFloat(document.getElementById('gross-wt').value) || 0;
+      const stone = parseFloat(document.getElementById('stone-wt').value) || 0;
+      const makingPerGram = parseFloat(document.getElementById('making-charge').value) || 0;
+
+      const netWt = Math.max(0, gross - stone);
+      const ratePerGram = calculatedRates[purity] || 0;
+      const metalPrice = netWt * ratePerGram;
+      const totalMaking = gross * makingPerGram;
+      const totalItemPrice = metalPrice + totalMaking;
+
+      invoiceItems.push({
+        fullName: `${itemName} (${purity})`,
+        netWt,
+        rate: ratePerGram,
+        making: totalMaking,
+        total: totalItemPrice
+      });
+
+      updateCustomerMeta();
+      renderBill();
+    }
+
+    function renderBill() {
+      const tbody = document.getElementById('invoice-items');
+      tbody.innerHTML = '';
+      let subtotal = 0;
+
+      invoiceItems.forEach(item => {
+        subtotal += item.total;
+        tbody.innerHTML += `<tr>
+          <td>${item.fullName}</td>
+          <td>${item.netWt.toFixed(3)}g</td>
+          <td>₹${item.rate}</td>
+          <td>₹${item.making.toFixed(2)}</td>
+          <td>₹${item.total.toFixed(2)}</td>
+        </tr>`;
+      });
+
+      const gst = subtotal * 0.03;
+      document.getElementById('bill-subtotal').textContent = subtotal.toFixed(2);
+      document.getElementById('bill-gst').textContent = gst.toFixed(2);
+      document.getElementById('bill-total').textContent = (subtotal + gst).toFixed(2);
+    }
+
+    function recordCurrentBill() {
+      if (invoiceItems.length === 0) return;
+      const custName = document.getElementById('cust-name').value || 'Walk-in Customer';
+      const custPhone = document.getElementById('cust-phone').value || '-';
+      const date = document.getElementById('bill-date').textContent;
+      const time = document.getElementById('bill-time').textContent;
+      const grandTotal = document.getElementById('bill-total').textContent;
+
+      // Check if this invoice number is already recorded
+      if (!billHistory.some(b => b.invoiceNo === currentInvoiceNo)) {
+        billHistory.unshift({
+          invoiceNo: currentInvoiceNo,
+          dateTime: `${date} ${time}`,
+          customerName: custName,
+          phone: custPhone,
+          itemsCount: invoiceItems.length,
+          total: grandTotal
+        });
+        renderHistory();
+        saveData();
+      }
+    }
+
+    function handlePrintBill() {
+      if (invoiceItems.length === 0) {
+        alert('Please add items to the bill first.');
+        return;
+      }
+      recordCurrentBill();
+      window.print();
+    }
+
+    async function sendPDFDirectToWhatsApp() {
+      const custName = document.getElementById('cust-name').value || 'Customer';
+      const custPhone = document.getElementById('cust-phone').value;
+      const date = document.getElementById('bill-date').textContent;
+      const time = document.getElementById('bill-time').textContent;
+      const grandTotal = document.getElementById('bill-total').textContent;
+      const btn = document.getElementById('send-wa-btn');
+
+      if (!custPhone) {
+        alert('Please enter customer phone number (e.g. 98XXXXXXXX)');
+        return;
+      }
+
+      if (invoiceItems.length === 0) {
+        alert('Please add at least one item to the invoice before sending.');
+        return;
+      }
+
+      recordCurrentBill();
+
+      btn.disabled = true;
+      btn.textContent = '⏳ Sending PDF to WhatsApp...';
+
+      try {
+        const element = document.getElementById('printable-invoice');
+        const opt = {
+          margin: [10, 10, 10, 10],
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: { scale: 2 },
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+
+        const pdfBase64 = await html2pdf().set(opt).from(element).outputPdf('datauristring');
+        const rawBase64 = pdfBase64.split(',')[1];
+
+        const res = await fetch('/api/send-bill-whatsapp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            phone: custPhone,
+            customerName: custName,
+            billNo: currentInvoiceNo,
+            date: date,
+            time: time,
+            totalAmount: grandTotal,
+            pdfBase64: rawBase64
+          })
+        });
+
+        const result = await res.json();
+        if (result.success) {
+          alert('✓ Success: PDF Bill has been sent directly to ' + custPhone + ' on WhatsApp!');
+        } else {
+          alert('Error: ' + result.message);
+        }
+      } catch (err) {
+        alert('Failed to send PDF: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '🚀 Send PDF via WhatsApp';
+      }
+    }
+
+    function renderStock() {
+      const tbody = document.getElementById('stock-list');
+      tbody.innerHTML = '';
+      inventory.forEach((item, index) => {
+        tbody.innerHTML += `<tr>
+          <td>${item.tag}</td>
+          <td>${item.name}</td>
+          <td>${item.cat}</td>
+          <td>${item.wt.toFixed(3)}</td>
+          <td><span style="color: green; font-weight:600;">In Stock</span></td>
+          <td><button class="btn btn-danger" style="padding:4px 8px; font-size: 0.75rem;" onclick="removeStock(${index})">Remove</button></td>
+        </tr>`;
+      });
+    }
+
+    function renderHistory() {
+      const tbody = document.getElementById('history-list');
+      tbody.innerHTML = '';
+      if (billHistory.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted);">No bills generated yet.</td></tr>`;
+        return;
+      }
+      billHistory.forEach(bill => {
+        tbody.innerHTML += `<tr>
+          <td><strong>${bill.invoiceNo}</strong></td>
+          <td>${bill.dateTime}</td>
+          <td>${bill.customerName}</td>
+          <td>${bill.phone}</td>
+          <td>${bill.itemsCount} item(s)</td>
+          <td><strong>₹${bill.total}</strong></td>
+        </tr>`;
+      });
+    }
+
+    function addStock() {
+      const tag = document.getElementById('inv-tag').value;
+      const name = document.getElementById('inv-name').value;
+      const cat = document.getElementById('inv-cat').value;
+      const wt = parseFloat(document.getElementById('inv-wt').value) || 0;
+
+      if (!tag || !name) return alert('Please enter Tag and Item Name');
+      inventory.push({ tag, name, cat, wt });
+      renderStock();
+      saveData();
+    }
+
+    function removeStock(index) {
+      inventory.splice(index, 1);
+      renderStock();
+      saveData();
+    }
+  </script>
+</body>
+</html>
