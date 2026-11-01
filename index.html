@@ -860,7 +860,10 @@
         pdfWrapper.appendChild(pdfElement);
         document.body.appendChild(pdfWrapper);
 
-        await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+        // Do not wait for requestAnimationFrame here. On mobile, opening the
+        // WhatsApp placeholder tab can background this page and suspend rAF,
+        // leaving the share flow stuck forever at "Rendering invoice PDF…".
+        // The cloned invoice is already attached and can be rendered immediately.
 
         const opt = {
           margin: [8, 8, 8, 8],
