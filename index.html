@@ -839,7 +839,7 @@
       let pdfWrapper = null;
       try {
         recordCurrentBill();
-        setShareStatus('Preparing your invoice PDF…');
+        setShareStatus('Rendering invoice PDF…');
 
         const element = document.getElementById('printable-invoice');
         const pdfElement = element.cloneNode(true);
@@ -856,7 +856,7 @@
         // Render from an attached, isolated element. html2canvas can crop detached
         // clones or clones inside the billing grid, which caused partial PDFs.
         pdfWrapper = document.createElement('div');
-        pdfWrapper.style.cssText = 'position:absolute;left:-10000px;top:0;width:210mm;height:auto;overflow:visible;background:#ffffff;';
+        pdfWrapper.style.cssText = 'position:fixed;left:0;top:0;width:210mm;height:auto;overflow:visible;background:#ffffff;opacity:0;pointer-events:none;z-index:-1;';
         pdfWrapper.appendChild(pdfElement);
         document.body.appendChild(pdfWrapper);
 
@@ -865,9 +865,9 @@
         const opt = {
           margin: [8, 8, 8, 8],
           filename: `OM_JEWELLERS_${currentInvoiceNo}.pdf`,
-          image: { type: 'jpeg', quality: 0.92 },
+          image: { type: 'jpeg', quality: 0.88 },
           pagebreak: { mode: ['css', 'legacy'] },
-          html2canvas: { scale: 1.25, useCORS: true, backgroundColor: '#ffffff', scrollX: 0, scrollY: 0 },
+          html2canvas: { scale: 1, useCORS: true, backgroundColor: '#ffffff', scrollX: 0, scrollY: 0, logging: false },
           jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
         };
 
