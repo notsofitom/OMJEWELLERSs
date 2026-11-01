@@ -759,7 +759,7 @@
       const custPhone = document.getElementById('cust-phone').value;
       const date = document.getElementById('bill-date').textContent;
       const grandTotal = document.getElementById('bill-total').textContent;
-      const phoneDigits = custPhone.replace(/\\D/g, '');
+      const phoneDigits = custPhone.replace(/\D/g, '');
 
       if (!phoneDigits || phoneDigits.length < 10 || phoneDigits.length > 15) {
         alert('Please enter a valid customer phone number with country code (e.g. 9198XXXXXXXX).');
