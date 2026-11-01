@@ -793,11 +793,15 @@
         alert('Please allow pop-ups for this site, then try sharing the invoice again.');
         return;
       }
-      whatsappTab.document.write('<p style="font-family:Arial;padding:24px">Preparing your invoice link…</p>');
+      whatsappTab.document.write('<p id="share-status" style="font-family:Arial;padding:24px">Preparing your invoice PDF…</p>');
+      const setShareStatus = (message) => {
+        try { whatsappTab.document.getElementById('share-status').textContent = message; } catch (_) {}
+      };
 
       let pdfWrapper = null;
       try {
         recordCurrentBill();
+        setShareStatus('Preparing your invoice PDF…');
 
         const element = document.getElementById('printable-invoice');
         const pdfElement = element.cloneNode(true);
@@ -823,9 +827,9 @@
         const opt = {
           margin: [8, 8, 8, 8],
           filename: `OM_JEWELLERS_${currentInvoiceNo}.pdf`,
-          image: { type: 'jpeg', quality: 0.98 },
+          image: { type: 'jpeg', quality: 0.92 },
           pagebreak: { mode: ['css', 'legacy'] },
-          html2canvas: { scale: 1.5, useCORS: true, backgroundColor: '#ffffff', scrollX: 0, scrollY: 0 },
+          html2canvas: { scale: 1.25, useCORS: true, backgroundColor: '#ffffff', scrollX: 0, scrollY: 0 },
           jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
         };
 
@@ -836,17 +840,17 @@
           throw new Error('The generated PDF is empty or larger than 8 MB.');
         }
 
-        const pdfBase64 = await new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(String(reader.result).split(',')[1]);
-          reader.onerror = () => reject(new Error('Could not read the generated PDF.'));
-          reader.readAsDataURL(pdfBlob);
-        });
+        setShareStatus('Uploading invoice securely…');
 
+        // Send the PDF directly as binary. This avoids the slow Base64 conversion
+        // and the extra memory/network overhead of wrapping it in JSON.
         const uploadResponse = await fetch('/api/invoices/upload', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ pdfBase64, invoiceNo: currentInvoiceNo })
+          headers: {
+            'Content-Type': 'application/pdf',
+            'X-Invoice-No': currentInvoiceNo
+          },
+          body: pdfBlob
         });
         const uploadResult = await uploadResponse.json().catch(() => ({}));
 
@@ -854,6 +858,7 @@
           throw new Error(uploadResult.error || 'Could not upload the invoice PDF.');
         }
 
+        setShareStatus('Opening WhatsApp…');
         let message = `*OM JEWELLERS* - Tax Invoice\n`;
         message += `Invoice #: ${currentInvoiceNo}\n`;
         message += `Date: ${date}\n`;
