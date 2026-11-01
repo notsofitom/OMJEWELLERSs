@@ -103,7 +103,7 @@ app.post('/api/invoices/upload', express.raw({ type: 'application/pdf', limit: '
         const baseUrl = process.env.APP_BASE_URL || `https://${req.get('host')}`;
         res.json({
             success: true,
-            url: `${baseUrl.replace(/\\/$/, '')}/i/${shortId}`
+            url: `${baseUrl.replace(/\/$/, '')}/i/${shortId}`
         });
     } catch (err) {
         console.error('Invoice upload error:', err);
