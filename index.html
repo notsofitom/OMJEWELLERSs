@@ -22,37 +22,47 @@
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
-    body { background-color: var(--bg); color: var(--text); padding-bottom: 50px; }
+    body { background-color: var(--bg); color: var(--text); padding-bottom: 50px; -webkit-tap-highlight-color: transparent; }
 
     header {
       background: linear-gradient(135deg, #1f1a17, #2c2523);
       color: #fff;
-      padding: 1.5rem 2rem;
+      padding: 1rem;
       display: flex;
-      justify-content: space-between;
+      flex-direction: column;
       align-items: center;
+      gap: 12px;
       border-bottom: 3px solid var(--primary);
-      flex-wrap: wrap;
-      gap: 10px;
+      text-align: center;
+    }
+
+    @media (min-width: 640px) {
+      header {
+        flex-direction: row;
+        justify-content: space-between;
+        padding: 1.25rem 2rem;
+        text-align: left;
+      }
     }
 
     header h1 {
       font-family: 'Cinzel', serif;
       letter-spacing: 2px;
       color: #dfba73;
+      font-size: 1.5rem;
     }
 
-    .nav-tabs { display: flex; gap: 8px; flex-wrap: wrap; }
+    .nav-tabs { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
 
     .tab-btn {
       background: transparent;
       border: 1px solid var(--primary);
       color: #dfba73;
-      padding: 8px 14px;
+      padding: 7px 12px;
       border-radius: 4px;
       cursor: pointer;
       font-weight: 500;
-      font-size: 0.9rem;
+      font-size: 0.85rem;
       transition: all 0.2s;
     }
 
@@ -62,9 +72,9 @@
     }
 
     .container {
-      max-width: 1250px;
-      margin: 2rem auto;
-      padding: 0 1rem;
+      max-width: 1200px;
+      margin: 1rem auto;
+      padding: 0 0.75rem;
     }
 
     .tab-content { display: none; }
@@ -74,54 +84,68 @@
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: 8px;
-      padding: 1.5rem;
+      padding: 1rem;
       box-shadow: 0 4px 12px rgba(0,0,0,0.03);
-      margin-bottom: 1.5rem;
+      margin-bottom: 1rem;
+    }
+
+    @media (min-width: 640px) {
+      .card { padding: 1.5rem; margin-bottom: 1.5rem; }
     }
 
     .section-title {
       font-family: 'Cinzel', serif;
-      font-size: 1.25rem;
+      font-size: 1.1rem;
       color: var(--primary-dark);
       border-bottom: 1px solid var(--border);
-      padding-bottom: 0.5rem;
+      padding-bottom: 0.4rem;
       margin-bottom: 1rem;
     }
 
-    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
-    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
-    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
+    .grid-2 { display: grid; grid-template-columns: 1fr; gap: 1rem; }
+    .grid-3 { display: grid; grid-template-columns: 1fr; gap: 1rem; }
+    .grid-4 { display: grid; grid-template-columns: 1fr; gap: 1rem; }
 
-    @media(max-width: 768px) {
-      .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+    @media (min-width: 768px) {
+      .grid-2 { grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+      .grid-3 { grid-template-columns: repeat(3, 1fr); }
+      .grid-4 { grid-template-columns: repeat(4, 1fr); }
     }
 
     .form-group {
-      margin-bottom: 1rem;
+      margin-bottom: 0.85rem;
       display: flex;
       flex-direction: column;
       gap: 4px;
     }
 
-    label { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); }
+    label { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); }
     input, select {
-      padding: 9px 12px;
+      padding: 10px 12px;
       border: 1px solid var(--border);
       border-radius: 4px;
-      font-size: 0.95rem;
+      font-size: 1rem; /* Prevents iOS auto-zoom on focus */
       outline: none;
+      width: 100%;
+      background: #fff;
     }
     input:focus, select:focus { border-color: var(--primary); }
 
     .btn {
-      padding: 10px 14px;
+      padding: 10px 16px;
       border-radius: 4px;
       font-weight: 600;
       cursor: pointer;
       border: none;
       transition: background 0.2s;
       font-size: 0.9rem;
+      width: 100%;
     }
+
+    @media (min-width: 640px) {
+      .btn { width: auto; }
+    }
+
     .btn-primary { background: var(--primary); color: white; }
     .btn-primary:hover { background: var(--primary-dark); }
     .btn-whatsapp { background: var(--whatsapp); color: white; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
@@ -130,29 +154,38 @@
     .btn-success { background: var(--accent-green); color: white; }
     .btn-info { background: var(--accent-blue); color: white; }
 
+    /* Responsive Khata and History Tables */
+    .table-responsive {
+      width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      margin-top: 1rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+    }
+
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 1rem;
-      overflow-x: auto;
-      display: block;
+      min-width: 650px;
     }
 
     th, td {
-      border: 1px solid var(--border);
-      padding: 10px;
+      border-bottom: 1px solid var(--border);
+      padding: 10px 12px;
       text-align: left;
-      font-size: 0.9rem;
-      white-space: nowrap;
+      font-size: 0.85rem;
     }
 
     th { background: #faf8f5; font-weight: 600; }
+    tr:last-child td { border-bottom: none; }
 
     .badge {
-      padding: 4px 10px;
+      padding: 4px 8px;
       border-radius: 12px;
-      font-size: 0.75rem;
+      font-size: 0.7rem;
       font-weight: 600;
+      display: inline-block;
     }
     .badge-pending { background: #fde8e8; color: #c0392b; }
     .badge-partial { background: #fef3c7; color: #d97706; }
@@ -160,11 +193,17 @@
 
     .action-row {
       display: flex;
-      gap: 10px;
+      flex-direction: column;
+      gap: 8px;
       margin-top: 1.5rem;
-      flex-wrap: wrap;
     }
 
+    @media (min-width: 640px) {
+      .action-row { flex-direction: row; }
+      .action-row button { flex: 1; }
+    }
+
+    /* Print invoice view scaling */
     @media print {
       body * { visibility: hidden; }
       #printable-invoice, #printable-invoice * { visibility: visible; }
@@ -174,7 +213,7 @@
         top: 0;
         width: 100%;
         margin: 0;
-        padding: 20px;
+        padding: 15px;
         border: none;
         box-shadow: none;
       }
@@ -187,13 +226,13 @@
   <header>
     <div>
       <h1>OM JEWELLERS</h1>
-      <small style="color: #bbb;">Billing, Stock & KhataBook Desk</small>
+      <small style="color: #bbb;">Billing, Stock & KhataBook</small>
     </div>
     <div class="nav-tabs no-print">
-      <button class="tab-btn active" onclick="switchTab('billing')">Billing Pad</button>
-      <button class="tab-btn" onclick="switchTab('inventory')">Stock Manager</button>
-      <button class="tab-btn" onclick="switchTab('history')">Bill History</button>
-      <button class="tab-btn" onclick="switchTab('khata')">📖 KhataBook</button>
+      <button class="tab-btn active" onclick="switchTab('billing')">Billing</button>
+      <button class="tab-btn" onclick="switchTab('inventory')">Stock</button>
+      <button class="tab-btn" onclick="switchTab('history')">History</button>
+      <button class="tab-btn" onclick="switchTab('khata')">KhataBook</button>
     </div>
   </header>
 
@@ -202,28 +241,28 @@
     <div id="billing-tab" class="tab-content active">
       
       <div class="card no-print">
-        <div class="section-title">Daily Metal Rates Board (Set Once Per Day)</div>
+        <div class="section-title">Daily Metal Rates Board</div>
         <div class="grid-3">
           <div class="form-group">
-            <label>Base 24K Gold Rate / gram (₹)</label>
+            <label>Base 24K Gold Rate / g (₹)</label>
             <input type="number" id="base-24k-rate" value="7400" oninput="calculatePurityRates()">
           </div>
           <div class="form-group">
-            <label>Silver Rate / gram (₹)</label>
+            <label>Silver Rate / g (₹)</label>
             <input type="number" id="base-silver-rate" value="90" oninput="updateSilverRate()">
           </div>
           <div class="form-group" style="justify-content: flex-end;">
-            <button class="btn btn-primary" style="margin-top: auto;" onclick="lockDailyRates()">Rates Locked for Today ✓</button>
+            <button class="btn btn-primary" style="margin-top: auto;" onclick="lockDailyRates()">Lock Rates ✓</button>
           </div>
         </div>
 
-        <div style="display: flex; flex-wrap: wrap; gap: 15px; margin-top: 12px; font-size: 0.85rem; color: var(--text-muted); background: #faf8f5; padding: 12px; border-radius: 4px;">
-          <div><strong>24K (99.9%):</strong> ₹<span id="rate-display-24k">7400</span>/g</div>
-          <div><strong>22K (91.6%):</strong> ₹<span id="rate-display-22k">6778</span>/g</div>
-          <div><strong>20K (83.3%):</strong> ₹<span id="rate-display-20k">6164</span>/g</div>
-          <div><strong>18K (75.0%):</strong> ₹<span id="rate-display-18k">5550</span>/g</div>
-          <div><strong>14K (58.5%):</strong> ₹<span id="rate-display-14k">4329</span>/g</div>
-          <div><strong>Silver (925):</strong> ₹<span id="rate-display-silver">90</span>/g</div>
+        <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; font-size: 0.8rem; color: var(--text-muted); background: #faf8f5; padding: 10px; border-radius: 4px;">
+          <div><strong>24K:</strong> ₹<span id="rate-display-24k">7400</span></div>
+          <div><strong>22K:</strong> ₹<span id="rate-display-22k">6778</span></div>
+          <div><strong>20K:</strong> ₹<span id="rate-display-20k">6164</span></div>
+          <div><strong>18K:</strong> ₹<span id="rate-display-18k">5550</span></div>
+          <div><strong>14K:</strong> ₹<span id="rate-display-14k">4329</span></div>
+          <div><strong>Silver:</strong> ₹<span id="rate-display-silver">90</span></div>
         </div>
       </div>
 
@@ -255,7 +294,7 @@
             </div>
             <div class="form-group">
               <label>Item Name</label>
-              <input type="text" id="item-name" placeholder="Necklace / Ring / Bangles">
+              <input type="text" id="item-name" placeholder="Necklace / Ring">
             </div>
           </div>
 
@@ -265,11 +304,11 @@
               <input type="number" step="0.001" id="gross-wt" placeholder="10.500">
             </div>
             <div class="form-group">
-              <label>Stone/Beads Wt (g)</label>
+              <label>Stone Wt (g)</label>
               <input type="number" step="0.001" id="stone-wt" value="0">
             </div>
             <div class="form-group">
-              <label>Making Charges / g (₹)</label>
+              <label>Making / g (₹)</label>
               <input type="number" id="making-charge" value="450">
             </div>
           </div>
@@ -279,17 +318,17 @@
             <input type="number" id="gst-rate" value="3">
           </div>
 
-          <button class="btn btn-primary" style="width: 100%; margin-top: 10px;" onclick="addItemToInvoice()">Add Item to Bill</button>
+          <button class="btn btn-primary" style="width: 100%; margin-top: 5px;" onclick="addItemToInvoice()">Add Item to Bill</button>
         </div>
 
         <div class="card" id="printable-invoice">
-          <div style="text-align: center; margin-bottom: 1.2rem; border-bottom: 2px solid var(--border); padding-bottom: 10px;">
-            <h2 style="font-family: 'Cinzel', serif; letter-spacing: 1px;">OM JEWELLERS</h2>
-            <p style="font-size: 0.85rem; color: var(--text-muted);">Main Market Road • GSTIN: 23AAAAA0000A1Z5</p>
-            <p style="font-size: 0.85rem; color: var(--text-muted);">Retail Estimate / Tax Invoice</p>
+          <div style="text-align: center; margin-bottom: 1rem; border-bottom: 2px solid var(--border); padding-bottom: 8px;">
+            <h2 style="font-family: 'Cinzel', serif; font-size: 1.25rem; letter-spacing: 1px;">OM JEWELLERS</h2>
+            <p style="font-size: 0.75rem; color: var(--text-muted);">Main Market Road • GSTIN: 23AAAAA0000A1Z5</p>
+            <p style="font-size: 0.75rem; color: var(--text-muted);">Retail Estimate / Tax Invoice</p>
           </div>
 
-          <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 1rem;">
+          <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 0.85rem;">
             <div>
               <strong>Billed To:</strong> <span id="bill-cust-name">-</span><br>
               <strong>Contact:</strong> <span id="bill-cust-phone">-</span>
@@ -301,45 +340,46 @@
             </div>
           </div>
 
-          <table>
-            <thead>
-              <tr>
-                <th>Item & Purity</th>
-                <th>Net Wt</th>
-                <th>Rate/g</th>
-                <th>Making</th>
-                <th>Total (₹)</th>
-              </tr>
-            </thead>
-            <tbody id="invoice-items"></tbody>
-          </table>
+          <div class="table-responsive" style="margin-top: 0; border: none;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Item</th>
+                  <th>Net Wt</th>
+                  <th>Rate/g</th>
+                  <th>Making</th>
+                  <th>Total (₹)</th>
+                </tr>
+              </thead>
+              <tbody id="invoice-items"></tbody>
+            </table>
+          </div>
 
-          <div class="no-print" style="margin-top: 1rem; background: #faf8f5; padding: 10px; border-radius: 4px; border: 1px dashed var(--border);">
+          <div class="no-print" style="margin-top: 0.85rem; background: #faf8f5; padding: 8px; border-radius: 4px; border: 1px dashed var(--border);">
             <div class="form-group" style="margin-bottom: 0;">
-              <label style="color: var(--accent-red);">🏷️ Discount / Less Amount on Bill (₹)</label>
+              <label style="color: var(--accent-red);">🏷️ Discount / Less Amount (₹)</label>
               <input type="number" id="discount-amt" value="0" placeholder="0" oninput="renderBill()" style="background: #fff;">
             </div>
           </div>
 
-          <div style="margin-top: 1.2rem; text-align: right; line-height: 1.6;">
+          <div style="margin-top: 1rem; text-align: right; line-height: 1.5; font-size: 0.85rem;">
             <div>Subtotal: ₹<span id="bill-subtotal">0.00</span></div>
             <div>GST (3%): ₹<span id="bill-gst">0.00</span></div>
             <div id="discount-row" style="display: none; color: var(--accent-red);">Less / Discount: -₹<span id="bill-discount">0.00</span></div>
-            <div style="font-size: 1.2rem; font-weight: 700; color: var(--primary-dark); margin-top: 5px;">
+            <div style="font-size: 1.1rem; font-weight: 700; color: var(--primary-dark); margin-top: 4px;">
               Grand Total: ₹<span id="bill-total">0.00</span>
             </div>
           </div>
 
-          <div style="margin-top: 2rem; text-align: center; border-top: 1px dashed var(--border); padding-top: 1rem;">
-            <p style="font-size: 0.9rem; color: var(--text-muted); font-style: italic;">"Thank you for choosing us. We look forward to serving you again!"</p>
-            <h4 style="font-family: 'Cinzel', serif; color: var(--primary-dark); margin-top: 6px; letter-spacing: 1px;">Warm Regards, OM JEWELLERS</h4>
+          <div style="margin-top: 1.5rem; text-align: center; border-top: 1px dashed var(--border); padding-top: 0.75rem;">
+            <p style="font-size: 0.8rem; color: var(--text-muted); font-style: italic;">"Thank you for choosing us. We look forward to serving you again!"</p>
+            <h4 style="font-family: 'Cinzel', serif; font-size: 0.9rem; color: var(--primary-dark); margin-top: 4px; letter-spacing: 1px;">Warm Regards, OM JEWELLERS</h4>
           </div>
 
-          <!-- Action buttons including Save Bill without print -->
           <div class="action-row no-print">
-            <button class="btn btn-success" style="flex: 1;" onclick="saveBillOnly()">💾 Save Bill</button>
-            <button class="btn btn-primary" style="flex: 1;" onclick="handlePrintBill()">🖨️ Print Bill</button>
-            <button class="btn btn-whatsapp" style="flex: 1.3;" onclick="generateAndSendWhatsAppPDF()">📄 Send PDF & Save</button>
+            <button class="btn btn-success" onclick="saveBillOnly()">💾 Save</button>
+            <button class="btn btn-primary" onclick="handlePrintBill()">🖨️ Print</button>
+            <button class="btn btn-whatsapp" onclick="generateAndSendWhatsAppPDF()">📄 WhatsApp PDF</button>
           </div>
         </div>
       </div>
@@ -356,7 +396,7 @@
           </div>
           <div class="form-group">
             <label>Item Name</label>
-            <input type="text" id="inv-name" placeholder="20K Ring / 22K Chain">
+            <input type="text" id="inv-name" placeholder="20K Ring">
           </div>
           <div class="form-group">
             <label>Category</label>
@@ -378,19 +418,21 @@
 
       <div class="card">
         <div class="section-title">Current In-Store Stock</div>
-        <table>
-          <thead>
-            <tr>
-              <th>Tag #</th>
-              <th>Item</th>
-              <th>Category</th>
-              <th>Weight (g)</th>
-              <th>Status</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody id="stock-list"></tbody>
-        </table>
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Tag #</th>
+                <th>Item</th>
+                <th>Category</th>
+                <th>Weight (g)</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="stock-list"></tbody>
+          </table>
+        </div>
       </div>
     </div>
 
@@ -398,49 +440,53 @@
     <div id="history-tab" class="tab-content">
       <div class="card">
         <div class="section-title">Generated Bills History / Sales Ledger</div>
-        <table>
-          <thead>
-            <tr>
-              <th>Invoice #</th>
-              <th>Date & Time</th>
-              <th>Customer Name</th>
-              <th>Phone</th>
-              <th>Items Count</th>
-              <th>Grand Total (₹)</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody id="history-list"></tbody>
-        </table>
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Invoice #</th>
+                <th>Date & Time</th>
+                <th>Customer Name</th>
+                <th>Phone</th>
+                <th>Items Count</th>
+                <th>Grand Total (₹)</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="history-list"></tbody>
+          </table>
+        </div>
       </div>
     </div>
 
     <!-- KHATABOOK SECTION -->
     <div id="khata-tab" class="tab-content">
       <div class="card">
-        <div class="section-title">📖 Customer KhataBook (Partial & Full Payments)</div>
+        <div class="section-title">📖 Customer KhataBook</div>
         
-        <div class="form-group" style="margin-bottom: 1.5rem; max-width: 450px;">
-          <label>🔍 Search Khata by Customer Name or Mobile Number</label>
-          <input type="text" id="khata-search" placeholder="Type name or phone number..." oninput="renderKhata()">
+        <div class="form-group" style="margin-bottom: 1rem;">
+          <label>🔍 Search Khata by Name or Mobile Number</label>
+          <input type="text" id="khata-search" placeholder="Type name or phone..." oninput="renderKhata()">
         </div>
 
-        <table>
-          <thead>
-            <tr>
-              <th>Invoice #</th>
-              <th>Customer Name</th>
-              <th>Phone</th>
-              <th>Total (₹)</th>
-              <th>Paid Amount (₹)</th>
-              <th>Remaining Due (₹)</th>
-              <th>Status</th>
-              <th>Update Paid Amount</th>
-              <th>WhatsApp Action</th>
-            </tr>
-          </thead>
-          <tbody id="khata-list"></tbody>
-        </table>
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Invoice #</th>
+                <th>Customer Name</th>
+                <th>Phone</th>
+                <th>Total (₹)</th>
+                <th>Paid (₹)</th>
+                <th>Due (₹)</th>
+                <th>Status</th>
+                <th>Update Paid Amount</th>
+                <th>WhatsApp Action</th>
+              </tr>
+            </thead>
+            <tbody id="khata-list"></tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>
@@ -530,7 +576,7 @@
     }
 
     function lockDailyRates() {
-      alert("Today's metal rates have been locked and saved for all bills!");
+      alert("Today's metal rates have been locked!");
     }
 
     function switchTab(tab) {
@@ -660,7 +706,6 @@
       return true;
     }
 
-    // Save Bill without printing
     function saveBillOnly() {
       if (invoiceItems.length === 0) {
         alert('Please add items to the bill before saving.');
@@ -668,8 +713,7 @@
       }
       const saved = recordCurrentBill();
       if (saved) {
-        alert(`Bill #${currentInvoiceNo} has been saved successfully to Bill History & KhataBook!`);
-        // Prepare next invoice number
+        alert(`Bill #${currentInvoiceNo} has been saved successfully!`);
         currentInvoiceNo = `OJ-${1001 + billHistory.length}`;
         document.getElementById('bill-no').textContent = currentInvoiceNo;
       }
@@ -718,8 +762,8 @@
       message += `Date: ${date}\n`;
       message += `Billed To: ${custName}\n`;
       message += `*Grand Total (inc. 3% GST): ₹${grandTotal}*\n\n`;
-      message += `📎 *Your detailed PDF invoice has been downloaded.* Please attach it above!\n\n`;
-      message += `_Thank you for choosing us. We look forward to serving you again!_\n\n`;
+      message += `📎 *Your detailed PDF invoice has been downloaded.*\n\n`;
+      message += `_Thank you for choosing us!_\n\n`;
       message += `*Warm Regards,\nOM JEWELLERS*`;
 
       const encodedMsg = encodeURIComponent(message);
@@ -792,16 +836,16 @@
       let message = '';
       if (entry.status === 'Paid Fully') {
         message = `Namaste *${entry.customerName}* ji,\n\n`;
-        message += `We have successfully received your full payment of *₹${entry.total.toFixed(2)}* for Invoice *#${entry.invoiceNo}*.\n\n`;
-        message += `Thank you for clearing your balance with *OM JEWELLERS*. We truly appreciate your business and look forward to welcoming you back again soon!\n\n`;
+        message += `We have received your full payment of *₹${entry.total.toFixed(2)}* for Invoice *#${entry.invoiceNo}*.\n\n`;
+        message += `Thank you for choosing *OM JEWELLERS*!\n\n`;
         message += `*Warm Regards,\nOM JEWELLERS*`;
       } else {
         message = `Namaste *${entry.customerName}* ji,\n\n`;
-        message += `This is a gentle reminder from *OM JEWELLERS* regarding your invoice *#${entry.invoiceNo}*.\n\n`;
-        message += `• *Total Bill Amount:* ₹${entry.total.toFixed(2)}\n`;
-        message += `• *Amount Paid So Far:* ₹${(entry.paidAmount || 0).toFixed(2)}\n`;
-        message += `• *Pending Balance Due:* ₹${entry.dueAmount.toFixed(2)}\n\n`;
-        message += `Kindly settle the pending balance at your earliest convenience. Thank you!\n\n`;
+        message += `Gentle reminder from *OM JEWELLERS* for invoice *#${entry.invoiceNo}*.\n\n`;
+        message += `• *Total:* ₹${entry.total.toFixed(2)}\n`;
+        message += `• *Paid:* ₹${(entry.paidAmount || 0).toFixed(2)}\n`;
+        message += `• *Pending Due:* ₹${entry.dueAmount.toFixed(2)}\n\n`;
+        message += `Kindly settle at your earliest convenience. Thank you!\n\n`;
         message += `*Warm Regards,\nOM JEWELLERS*`;
       }
 
@@ -840,7 +884,7 @@
           <td>${bill.itemsCount} item(s)</td>
           <td><strong>₹${bill.total}</strong></td>
           <td>
-            <div style="display: flex; gap: 6px;">
+            <div style="display: flex; gap: 4px;">
               <button class="btn btn-info" style="padding: 4px 8px; font-size: 0.75rem;" onclick="editBill(${index})">✏️ Edit</button>
               <button class="btn btn-danger" style="padding: 4px 8px; font-size: 0.75rem;" onclick="deleteBill(${index})">🗑️ Delete</button>
             </div>
@@ -884,18 +928,18 @@
           <td style="color: ${entry.dueAmount > 0 ? '#c0392b' : '#27ae60'}; font-weight:700;">₹${(entry.dueAmount || 0).toFixed(2)}</td>
           <td><span class="badge ${badgeClass}">${entry.status}</span></td>
           <td>
-            <div style="display: flex; gap: 6px; align-items: center;">
-              <input type="number" step="0.01" style="width: 95px; padding: 4px;" placeholder="Paid ₹" 
+            <div style="display: flex; gap: 4px; align-items: center;">
+              <input type="number" step="0.01" style="width: 85px; padding: 4px; font-size: 0.85rem;" placeholder="Paid ₹" 
                 value="${entry.paidAmount || ''}" 
                 onchange="updateKhataPayment(${originalIndex}, this.value)">
-              <button class="btn btn-success" style="padding: 4px 8px; font-size: 0.75rem;" onclick="setKhataPaidFull(${originalIndex})">
+              <button class="btn btn-success" style="padding: 4px 6px; font-size: 0.7rem;" onclick="setKhataPaidFull(${originalIndex})">
                 Full ✓
               </button>
             </div>
           </td>
           <td>
-            <button class="btn ${isFullyPaid ? 'btn-success' : 'btn-whatsapp'}" style="padding: 6px 12px; font-size: 0.8rem;" onclick="sendKhataWhatsApp(${originalIndex})">
-              ${isFullyPaid ? '🙏 Send Thank You' : '💬 Send Reminder'}
+            <button class="btn ${isFullyPaid ? 'btn-success' : 'btn-whatsapp'}" style="padding: 6px 10px; font-size: 0.75rem;" onclick="sendKhataWhatsApp(${originalIndex})">
+              ${isFullyPaid ? '🙏 Thank You' : '💬 Reminder'}
             </button>
           </td>
         </tr>`;
