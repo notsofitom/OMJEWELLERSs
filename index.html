@@ -865,9 +865,11 @@
         const opt = {
           margin: [8, 8, 8, 8],
           filename: `OM_JEWELLERS_${currentInvoiceNo}.pdf`,
-          image: { type: 'jpeg', quality: 0.88 },
+          image: { type: 'jpeg', quality: 0.78 },
           pagebreak: { mode: ['css', 'legacy'] },
-          html2canvas: { scale: 1, useCORS: true, backgroundColor: '#ffffff', scrollX: 0, scrollY: 0, logging: false },
+          // Mobile browsers have tighter canvas memory limits. Render at a lower
+          // pixel scale on phones while keeping full-resolution output on desktop.
+          html2canvas: { scale: window.matchMedia('(max-width: 640px)').matches ? 0.65 : 1, useCORS: true, backgroundColor: '#ffffff', scrollX: 0, scrollY: 0, logging: false },
           jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
         };
 
