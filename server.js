@@ -65,7 +65,7 @@ app.post('/api/data', (req, res) => {
 
 // Upload a generated invoice PDF to a private Supabase Storage bucket and
 // return a time-limited link that the customer can open without an account.
-app.post('/api/invoices/upload', limitInvoiceUploads, async (req, res) => {
+app.post('/api/invoices/upload', express.raw({ type: 'application/pdf', limit: '8mb' }), limitInvoiceUploads, async (req, res) => {
     try {
         if (!supabase) {
             return res.status(503).json({
@@ -73,19 +73,11 @@ app.post('/api/invoices/upload', limitInvoiceUploads, async (req, res) => {
             });
         }
 
-        const { pdfBase64, invoiceNo } = req.body || {};
-        if (typeof pdfBase64 !== 'string' || !pdfBase64.trim()) {
+        const pdfBuffer = req.body;
+        if (!Buffer.isBuffer(pdfBuffer) || !pdfBuffer.length) {
             return res.status(400).json({ error: 'A PDF file is required.' });
         }
-
-        // Accept only a plain base64 payload, not a data URL or arbitrary content.
-        const normalizedBase64 = pdfBase64;
-        if (!/^[A-Za-z0-9+/]+={0,2}$/.test(normalizedBase64)) {
-            return res.status(400).json({ error: 'Invalid PDF encoding.' });
-        }
-
-        const pdfBuffer = Buffer.from(normalizedBase64, 'base64');
-        if (!pdfBuffer.length || pdfBuffer.length > PDF_MAX_BYTES) {
+        if (pdfBuffer.length > PDF_MAX_BYTES) {
             return res.status(413).json({ error: 'PDF must be smaller than 8 MB.' });
         }
         if (pdfBuffer.subarray(0, 5).toString('ascii') !== '%PDF-') {
@@ -108,12 +100,10 @@ app.post('/api/invoices/upload', limitInvoiceUploads, async (req, res) => {
             return res.status(502).json({ error: 'Could not store the invoice PDF.' });
         }
 
-        // Return a short URL on this app. A fresh private Supabase URL is
-        // generated only when the customer opens the short link.
         const baseUrl = process.env.APP_BASE_URL || `https://${req.get('host')}`;
         res.json({
             success: true,
-            url: `${baseUrl.replace(/\/$/, '')}/i/${shortId}`
+            url: `${baseUrl.replace(/\\/$/, '')}/i/${shortId}`
         });
     } catch (err) {
         console.error('Invoice upload error:', err);
