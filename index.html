@@ -17,7 +17,6 @@
       --text-muted: #6b635b;
       --accent-red: #c0392b;
       --accent-green: #27ae60;
-      --accent-orange: #d35400;
       --whatsapp: #25d366;
     }
 
@@ -312,9 +311,18 @@
             <tbody id="invoice-items"></tbody>
           </table>
 
+          <!-- Discount / Less Amount Input Field right on the invoice card -->
+          <div class="no-print" style="margin-top: 1rem; background: #faf8f5; padding: 10px; border-radius: 4px; border: 1px dashed var(--border);">
+            <div class="form-group" style="margin-bottom: 0;">
+              <label style="color: var(--accent-red);">🏷️ Discount / Less Amount on Bill (₹)</label>
+              <input type="number" id="discount-amt" value="0" placeholder="0" oninput="renderBill()" style="background: #fff;">
+            </div>
+          </div>
+
           <div style="margin-top: 1.2rem; text-align: right; line-height: 1.6;">
             <div>Subtotal: ₹<span id="bill-subtotal">0.00</span></div>
             <div>GST (3%): ₹<span id="bill-gst">0.00</span></div>
+            <div id="discount-row" style="display: none; color: var(--accent-red);">Less / Discount: -₹<span id="bill-discount">0.00</span></div>
             <div style="font-size: 1.2rem; font-weight: 700; color: var(--primary-dark); margin-top: 5px;">
               Grand Total: ₹<span id="bill-total">0.00</span>
             </div>
@@ -407,7 +415,6 @@
       <div class="card">
         <div class="section-title">📖 Customer KhataBook (Partial & Full Payments)</div>
         
-        <!-- Live Search Bar -->
         <div class="form-group" style="margin-bottom: 1.5rem; max-width: 450px;">
           <label>🔍 Search Khata by Customer Name or Mobile Number</label>
           <input type="text" id="khata-search" placeholder="Type name or phone number..." oninput="renderKhata()">
@@ -587,9 +594,21 @@
       });
 
       const gst = subtotal * 0.03;
+      const discount = parseFloat(document.getElementById('discount-amt')?.value) || 0;
+      const grandTotal = Math.max(0, subtotal + gst - discount);
+
       document.getElementById('bill-subtotal').textContent = subtotal.toFixed(2);
       document.getElementById('bill-gst').textContent = gst.toFixed(2);
-      document.getElementById('bill-total').textContent = (subtotal + gst).toFixed(2);
+      
+      const discountRow = document.getElementById('discount-row');
+      if (discount > 0) {
+        discountRow.style.display = 'block';
+        document.getElementById('bill-discount').textContent = discount.toFixed(2);
+      } else {
+        discountRow.style.display = 'none';
+      }
+
+      document.getElementById('bill-total').textContent = grandTotal.toFixed(2);
     }
 
     function recordCurrentBill() {
@@ -610,7 +629,6 @@
           total: grandTotal.toFixed(2)
         });
 
-        // Initialize in KhataBook with 0 paid by default
         khataBook.unshift({
           invoiceNo: currentInvoiceNo,
           customerName: custName,
@@ -678,7 +696,6 @@
       window.open(`https://api.whatsapp.com/send?phone=${custPhone}&text=${encodedMsg}`, '_blank');
     }
 
-    // Khata Payment & Status Logic
     function updateKhataPayment(index, paidInputVal) {
       const entry = khataBook[index];
       const paid = Math.min(entry.total, Math.max(0, parseFloat(paidInputVal) || 0));
@@ -706,7 +723,6 @@
       saveData();
     }
 
-    // Send WhatsApp Reminder or Thank You Confirmation
     function sendKhataWhatsApp(index) {
       const entry = khataBook[index];
       if (!entry.phone || entry.phone === '-') {
@@ -716,13 +732,11 @@
 
       let message = '';
       if (entry.status === 'Paid Fully') {
-        // Thank you message
         message = `Namaste *${entry.customerName}* ji,\n\n`;
         message += `We have successfully received your full payment of *₹${entry.total.toFixed(2)}* for Invoice *#${entry.invoiceNo}*.\n\n`;
         message += `Thank you for clearing your balance with *OM JEWELLERS*. We truly appreciate your business and look forward to welcoming you back again soon!\n\n`;
         message += `*Warm Regards,\nOM JEWELLERS*`;
       } else {
-        // Polite reminder with remaining dues
         message = `Namaste *${entry.customerName}* ji,\n\n`;
         message += `This is a gentle reminder from *OM JEWELLERS* regarding your invoice *#${entry.invoiceNo}*.\n\n`;
         message += `• *Total Bill Amount:* ₹${entry.total.toFixed(2)}\n`;
@@ -806,7 +820,7 @@
           <td><span class="badge ${badgeClass}">${entry.status}</span></td>
           <td>
             <div style="display: flex; gap: 6px; align-items: center;">
-              <input type="number" step="0.01" style="width: 90px; padding: 4px;" placeholder="Paid ₹" 
+              <input type="number" step="0.01" style="width: 95px; padding: 4px;" placeholder="Paid ₹" 
                 value="${entry.paidAmount || ''}" 
                 onchange="updateKhataPayment(${originalIndex}, this.value)">
               <button class="btn btn-success" style="padding: 4px 8px; font-size: 0.75rem;" onclick="setKhataPaidFull(${originalIndex})">
