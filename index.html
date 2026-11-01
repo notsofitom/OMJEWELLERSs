@@ -795,31 +795,43 @@
       }
       whatsappTab.document.write('<p style="font-family:Arial;padding:24px">Preparing your invoice link…</p>');
 
+      let pdfWrapper = null;
       try {
         recordCurrentBill();
 
         const element = document.getElementById('printable-invoice');
         const pdfElement = element.cloneNode(true);
 
-        // Remove buttons, discount editor and other controls from the customer PDF.
+        // Remove controls and allow the complete invoice/table to expand naturally.
         pdfElement.querySelectorAll('.no-print').forEach(node => node.remove());
         pdfElement.querySelectorAll('.table-responsive').forEach(node => {
           node.style.overflow = 'visible';
+          node.style.height = 'auto';
+          node.style.maxHeight = 'none';
         });
-        pdfElement.style.width = '190mm';
-        pdfElement.style.maxWidth = '190mm';
-        pdfElement.style.margin = '0';
-        pdfElement.style.background = '#ffffff';
+        pdfElement.style.cssText += ';display:block;width:190mm;max-width:190mm;height:auto;min-height:0;max-height:none;overflow:visible;margin:0;padding:12mm;background:#ffffff;box-sizing:border-box;';
+
+        // Render from an attached, isolated element. html2canvas can crop detached
+        // clones or clones inside the billing grid, which caused partial PDFs.
+        pdfWrapper = document.createElement('div');
+        pdfWrapper.style.cssText = 'position:absolute;left:-10000px;top:0;width:210mm;height:auto;overflow:visible;background:#ffffff;';
+        pdfWrapper.appendChild(pdfElement);
+        document.body.appendChild(pdfWrapper);
+
+        await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 
         const opt = {
-          margin: [10, 10, 10, 10],
+          margin: [8, 8, 8, 8],
           filename: `OM_JEWELLERS_${currentInvoiceNo}.pdf`,
           image: { type: 'jpeg', quality: 0.98 },
-          html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
+          pagebreak: { mode: ['css', 'legacy'] },
+          html2canvas: { scale: 1.5, useCORS: true, backgroundColor: '#ffffff', scrollX: 0, scrollY: 0 },
           jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
         };
 
         const pdfBlob = await html2pdf().set(opt).from(pdfElement).outputPdf('blob');
+        pdfWrapper.remove();
+        pdfWrapper = null;
         if (!pdfBlob || pdfBlob.size === 0 || pdfBlob.size > 8 * 1024 * 1024) {
           throw new Error('The generated PDF is empty or larger than 8 MB.');
         }
@@ -854,6 +866,7 @@
 
         whatsappTab.location.href = `https://wa.me/${phoneDigits}?text=${encodeURIComponent(message)}`;
       } catch (error) {
+        if (pdfWrapper) pdfWrapper.remove();
         console.error('WhatsApp invoice sharing failed:', error);
         whatsappTab.close();
         alert(error.message || 'Could not share the invoice. Please try again.');
