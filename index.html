@@ -17,6 +17,7 @@
       --text-muted: #6b635b;
       --accent-red: #c0392b;
       --accent-green: #27ae60;
+      --accent-orange: #d35400;
       --whatsapp: #25d366;
     }
 
@@ -61,7 +62,7 @@
     }
 
     .container {
-      max-width: 1200px;
+      max-width: 1250px;
       margin: 2rem auto;
       padding: 0 1rem;
     }
@@ -152,6 +153,7 @@
       font-weight: 600;
     }
     .badge-pending { background: #fde8e8; color: #c0392b; }
+    .badge-partial { background: #fef3c7; color: #d97706; }
     .badge-paid { background: #def7ec; color: #03543f; }
 
     .action-row {
@@ -403,20 +405,26 @@
     <!-- KHATABOOK SECTION -->
     <div id="khata-tab" class="tab-content">
       <div class="card">
-        <div class="section-title">📖 Customer KhataBook (Pending & Paid Ledger)</div>
-        <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1rem;">
-          Track pending balances, update payment statuses when customers pay, and send gentle payment reminders directly via WhatsApp.
-        </p>
+        <div class="section-title">📖 Customer KhataBook (Partial & Full Payments)</div>
+        
+        <!-- Live Search Bar -->
+        <div class="form-group" style="margin-bottom: 1.5rem; max-width: 450px;">
+          <label>🔍 Search Khata by Customer Name or Mobile Number</label>
+          <input type="text" id="khata-search" placeholder="Type name or phone number..." oninput="renderKhata()">
+        </div>
+
         <table>
           <thead>
             <tr>
               <th>Invoice #</th>
               <th>Customer Name</th>
               <th>Phone</th>
-              <th>Total Amount (₹)</th>
+              <th>Total (₹)</th>
+              <th>Paid Amount (₹)</th>
+              <th>Remaining Due (₹)</th>
               <th>Status</th>
-              <th>Update Status</th>
-              <th>WhatsApp Reminder</th>
+              <th>Update Paid Amount</th>
+              <th>WhatsApp Action</th>
             </tr>
           </thead>
           <tbody id="khata-list"></tbody>
@@ -528,6 +536,7 @@
       } else {
         document.getElementById('khata-tab').classList.add('active');
         document.querySelectorAll('.tab-btn')[3].classList.add('active');
+        renderKhata();
       }
     }
 
@@ -589,7 +598,7 @@
       const custPhone = document.getElementById('cust-phone').value || '-';
       const date = document.getElementById('bill-date').textContent;
       const time = document.getElementById('bill-time').textContent;
-      const grandTotal = document.getElementById('bill-total').textContent;
+      const grandTotal = parseFloat(document.getElementById('bill-total').textContent) || 0;
 
       if (!billHistory.some(b => b.invoiceNo === currentInvoiceNo)) {
         billHistory.unshift({
@@ -598,15 +607,17 @@
           customerName: custName,
           phone: custPhone,
           itemsCount: invoiceItems.length,
-          total: grandTotal
+          total: grandTotal.toFixed(2)
         });
 
-        // Add to KhataBook as Pending by default
+        // Initialize in KhataBook with 0 paid by default
         khataBook.unshift({
           invoiceNo: currentInvoiceNo,
           customerName: custName,
           phone: custPhone,
           total: grandTotal,
+          paidAmount: 0,
+          dueAmount: grandTotal,
           status: 'Pending'
         });
 
@@ -667,24 +678,59 @@
       window.open(`https://api.whatsapp.com/send?phone=${custPhone}&text=${encodedMsg}`, '_blank');
     }
 
-    function updateKhataStatus(index, newStatus) {
-      khataBook[index].status = newStatus;
+    // Khata Payment & Status Logic
+    function updateKhataPayment(index, paidInputVal) {
+      const entry = khataBook[index];
+      const paid = Math.min(entry.total, Math.max(0, parseFloat(paidInputVal) || 0));
+      entry.paidAmount = paid;
+      entry.dueAmount = Math.max(0, entry.total - paid);
+
+      if (entry.dueAmount === 0) {
+        entry.status = 'Paid Fully';
+      } else if (entry.paidAmount > 0) {
+        entry.status = 'Partial';
+      } else {
+        entry.status = 'Pending';
+      }
+
       renderKhata();
       saveData();
     }
 
-    function sendKhataReminder(index) {
+    function setKhataPaidFull(index) {
+      const entry = khataBook[index];
+      entry.paidAmount = entry.total;
+      entry.dueAmount = 0;
+      entry.status = 'Paid Fully';
+      renderKhata();
+      saveData();
+    }
+
+    // Send WhatsApp Reminder or Thank You Confirmation
+    function sendKhataWhatsApp(index) {
       const entry = khataBook[index];
       if (!entry.phone || entry.phone === '-') {
         alert('Customer phone number is missing.');
         return;
       }
 
-      let message = `Namaste *${entry.customerName}* ji,\n\n`;
-      message += `This is a gentle reminder from *OM JEWELLERS* regarding your pending bill *#${entry.invoiceNo}*.\n`;
-      message += `*Pending Amount: ₹${entry.total}*\n\n`;
-      message += `Kindly clear your dues at your earliest convenience. Thank you!\n\n`;
-      message += `*Warm Regards,\nOM JEWELLERS*`;
+      let message = '';
+      if (entry.status === 'Paid Fully') {
+        // Thank you message
+        message = `Namaste *${entry.customerName}* ji,\n\n`;
+        message += `We have successfully received your full payment of *₹${entry.total.toFixed(2)}* for Invoice *#${entry.invoiceNo}*.\n\n`;
+        message += `Thank you for clearing your balance with *OM JEWELLERS*. We truly appreciate your business and look forward to welcoming you back again soon!\n\n`;
+        message += `*Warm Regards,\nOM JEWELLERS*`;
+      } else {
+        // Polite reminder with remaining dues
+        message = `Namaste *${entry.customerName}* ji,\n\n`;
+        message += `This is a gentle reminder from *OM JEWELLERS* regarding your invoice *#${entry.invoiceNo}*.\n\n`;
+        message += `• *Total Bill Amount:* ₹${entry.total.toFixed(2)}\n`;
+        message += `• *Amount Paid So Far:* ₹${(entry.paidAmount || 0).toFixed(2)}\n`;
+        message += `• *Pending Balance Due:* ₹${entry.dueAmount.toFixed(2)}\n\n`;
+        message += `Kindly settle the pending balance at your earliest convenience. Thank you!\n\n`;
+        message += `*Warm Regards,\nOM JEWELLERS*`;
+      }
 
       const encodedMsg = encodeURIComponent(message);
       window.open(`https://api.whatsapp.com/send?phone=${entry.phone}&text=${encodedMsg}`, '_blank');
@@ -727,27 +773,50 @@
     function renderKhata() {
       const tbody = document.getElementById('khata-list');
       tbody.innerHTML = '';
-      if (khataBook.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted);">No Khata entries yet. Generate a bill to add entries here.</td></tr>`;
+
+      const query = (document.getElementById('khata-search')?.value || '').toLowerCase().trim();
+
+      const filtered = khataBook.filter(item => {
+        const nameMatch = (item.customerName || '').toLowerCase().includes(query);
+        const phoneMatch = (item.phone || '').includes(query);
+        const invoiceMatch = (item.invoiceNo || '').toLowerCase().includes(query);
+        return nameMatch || phoneMatch || invoiceMatch;
+      });
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: var(--text-muted);">No records found.</td></tr>`;
         return;
       }
-      khataBook.forEach((entry, index) => {
-        const badgeClass = entry.status === 'Paid' ? 'badge-paid' : 'badge-pending';
+
+      filtered.forEach(entry => {
+        const originalIndex = khataBook.indexOf(entry);
+        let badgeClass = 'badge-pending';
+        if (entry.status === 'Paid Fully') badgeClass = 'badge-paid';
+        else if (entry.status === 'Partial') badgeClass = 'badge-partial';
+
+        const isFullyPaid = entry.status === 'Paid Fully';
+
         tbody.innerHTML += `<tr>
           <td><strong>${entry.invoiceNo}</strong></td>
           <td>${entry.customerName}</td>
           <td>${entry.phone}</td>
-          <td><strong>₹${entry.total}</strong></td>
+          <td>₹${entry.total.toFixed(2)}</td>
+          <td>₹${(entry.paidAmount || 0).toFixed(2)}</td>
+          <td style="color: ${entry.dueAmount > 0 ? '#c0392b' : '#27ae60'}; font-weight:700;">₹${(entry.dueAmount || 0).toFixed(2)}</td>
           <td><span class="badge ${badgeClass}">${entry.status}</span></td>
           <td>
-            <select onchange="updateKhataStatus(${index}, this.value)" style="padding: 4px; font-size: 0.85rem;">
-              <option value="Pending" ${entry.status === 'Pending' ? 'selected' : ''}>Pending</option>
-              <option value="Paid" ${entry.status === 'Paid' ? 'selected' : ''}>Paid Fully</option>
-            </select>
+            <div style="display: flex; gap: 6px; align-items: center;">
+              <input type="number" step="0.01" style="width: 90px; padding: 4px;" placeholder="Paid ₹" 
+                value="${entry.paidAmount || ''}" 
+                onchange="updateKhataPayment(${originalIndex}, this.value)">
+              <button class="btn btn-success" style="padding: 4px 8px; font-size: 0.75rem;" onclick="setKhataPaidFull(${originalIndex})">
+                Full ✓
+              </button>
+            </div>
           </td>
           <td>
-            <button class="btn btn-whatsapp" style="padding: 6px 12px; font-size: 0.8rem;" onclick="sendKhataReminder(${index})">
-              💬 Send Reminder
+            <button class="btn ${isFullyPaid ? 'btn-success' : 'btn-whatsapp'}" style="padding: 6px 12px; font-size: 0.8rem;" onclick="sendKhataWhatsApp(${originalIndex})">
+              ${isFullyPaid ? '🙏 Send Thank You' : '💬 Send Reminder'}
             </button>
           </td>
         </tr>`;
