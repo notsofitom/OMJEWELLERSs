@@ -174,7 +174,6 @@
     <!-- BILLING SECTION -->
     <div id="billing-tab" class="tab-content active">
       
-      <!-- Daily Rate Controller Box -->
       <div class="card no-print">
         <div class="section-title">Daily Metal Rates Board (Set Once Per Day)</div>
         <div class="grid-3">
@@ -202,7 +201,6 @@
       </div>
 
       <div class="grid-2">
-        <!-- Input Form -->
         <div class="card no-print">
           <div class="section-title">Invoice Generator</div>
           <div class="grid-2">
@@ -211,8 +209,8 @@
               <input type="text" id="cust-name" placeholder="Ramesh Sharma" oninput="updateCustomerMeta()">
             </div>
             <div class="form-group">
-              <label>Phone Number (10 digits)</label>
-              <input type="text" id="cust-phone" placeholder="98XXXXXXXX" oninput="updateCustomerMeta()">
+              <label>Phone Number (with Country Code)</label>
+              <input type="text" id="cust-phone" placeholder="9198XXXXXXXX" oninput="updateCustomerMeta()">
             </div>
           </div>
 
@@ -257,7 +255,6 @@
           <button class="btn btn-primary" style="width: 100%; margin-top: 10px;" onclick="addItemToInvoice()">Add Item to Bill</button>
         </div>
 
-        <!-- Printable Bill Preview -->
         <div class="card" id="printable-invoice">
           <div style="text-align: center; margin-bottom: 1.2rem; border-bottom: 2px solid var(--border); padding-bottom: 10px;">
             <h2 style="font-family: 'Cinzel', serif; letter-spacing: 1px;">OM JEWELLERS</h2>
@@ -298,17 +295,14 @@
             </div>
           </div>
 
-          <!-- Warm Regards Footer for Print -->
           <div style="margin-top: 2rem; text-align: center; border-top: 1px dashed var(--border); padding-top: 1rem;">
             <p style="font-size: 0.9rem; color: var(--text-muted); font-style: italic;">"Thank you for choosing us. We look forward to serving you again!"</p>
             <h4 style="font-family: 'Cinzel', serif; color: var(--primary-dark); margin-top: 6px; letter-spacing: 1px;">Warm Regards, OM JEWELLERS</h4>
           </div>
 
           <div class="action-row no-print">
-            <button class="btn btn-primary" style="flex: 1;" onclick="handlePrintBill()">🖨️ Print & Save Bill</button>
-            <button class="btn btn-whatsapp" id="send-wa-btn" style="flex: 1.5;" onclick="sendPDFDirectToWhatsApp()">
-              🚀 Send PDF via WhatsApp
-            </button>
+            <button class="btn btn-primary" style="flex: 1;" onclick="handlePrintBill()">🖨️ Print Bill</button>
+            <button class="btn btn-whatsapp" style="flex: 1.5;" onclick="generateAndSendWhatsAppPDF()">📄 Send PDF to WhatsApp</button>
           </div>
         </div>
       </div>
@@ -542,7 +536,6 @@
       const time = document.getElementById('bill-time').textContent;
       const grandTotal = document.getElementById('bill-total').textContent;
 
-      // Check if this invoice number is already recorded
       if (!billHistory.some(b => b.invoiceNo === currentInvoiceNo)) {
         billHistory.unshift({
           invoiceNo: currentInvoiceNo,
@@ -566,67 +559,48 @@
       window.print();
     }
 
-    async function sendPDFDirectToWhatsApp() {
+    async function generateAndSendWhatsAppPDF() {
       const custName = document.getElementById('cust-name').value || 'Customer';
       const custPhone = document.getElementById('cust-phone').value;
       const date = document.getElementById('bill-date').textContent;
-      const time = document.getElementById('bill-time').textContent;
       const grandTotal = document.getElementById('bill-total').textContent;
-      const btn = document.getElementById('send-wa-btn');
 
       if (!custPhone) {
-        alert('Please enter customer phone number (e.g. 98XXXXXXXX)');
+        alert('Please enter customer phone number with country code (e.g. 9198XXXXXXXX)');
         return;
       }
 
       if (invoiceItems.length === 0) {
-        alert('Please add at least one item to the invoice before sending.');
+        alert('Please add at least one item to the invoice.');
         return;
       }
 
       recordCurrentBill();
 
-      btn.disabled = true;
-      btn.textContent = '⏳ Sending PDF to WhatsApp...';
+      const element = document.getElementById('printable-invoice');
+      const opt = {
+        margin: [10, 10, 10, 10],
+        filename: `OM_JEWELLERS_${currentInvoiceNo}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
 
-      try {
-        const element = document.getElementById('printable-invoice');
-        const opt = {
-          margin: [10, 10, 10, 10],
-          image: { type: 'jpeg', quality: 0.98 },
-          html2canvas: { scale: 2 },
-          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-        };
+      // 1. Download PDF to device automatically
+      await html2pdf().set(opt).from(element).save();
 
-        const pdfBase64 = await html2pdf().set(opt).from(element).outputPdf('datauristring');
-        const rawBase64 = pdfBase64.split(',')[1];
+      // 2. Format WhatsApp text
+      let message = `*OM JEWELLERS* - Tax Invoice\n`;
+      message += `Invoice #: ${currentInvoiceNo}\n`;
+      message += `Date: ${date}\n`;
+      message += `Billed To: ${custName}\n`;
+      message += `*Grand Total (inc. 3% GST): ₹${grandTotal}*\n\n`;
+      message += `📎 *Your detailed PDF invoice has been downloaded.* Please attach it above!\n\n`;
+      message += `_Thank you for choosing us. We look forward to serving you again!_\n\n`;
+      message += `*Warm Regards,\nOM JEWELLERS*`;
 
-        const res = await fetch('/api/send-bill-whatsapp', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            phone: custPhone,
-            customerName: custName,
-            billNo: currentInvoiceNo,
-            date: date,
-            time: time,
-            totalAmount: grandTotal,
-            pdfBase64: rawBase64
-          })
-        });
-
-        const result = await res.json();
-        if (result.success) {
-          alert('✓ Success: PDF Bill has been sent directly to ' + custPhone + ' on WhatsApp!');
-        } else {
-          alert('Error: ' + result.message);
-        }
-      } catch (err) {
-        alert('Failed to send PDF: ' + err.message);
-      } finally {
-        btn.disabled = false;
-        btn.textContent = '🚀 Send PDF via WhatsApp';
-      }
+      const encodedMsg = encodeURIComponent(message);
+      window.open(`https://api.whatsapp.com/send?phone=${custPhone}&text=${encodedMsg}`, '_blank');
     }
 
     function renderStock() {
