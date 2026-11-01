@@ -92,8 +92,8 @@ app.post('/api/invoices/upload', limitInvoiceUploads, async (req, res) => {
             return res.status(400).json({ error: 'Uploaded file is not a valid PDF.' });
         }
 
-        const safeInvoiceNo = String(invoiceNo || 'invoice').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 40) || 'invoice';
-        const objectPath = `${new Date().toISOString().slice(0, 10)}/${safeInvoiceNo}-${crypto.randomUUID()}.pdf`;
+        const shortId = crypto.randomUUID();
+        const objectPath = `${shortId}.pdf`;
 
         const { error: uploadError } = await supabase.storage
             .from(supabaseBucket)
@@ -108,25 +108,44 @@ app.post('/api/invoices/upload', limitInvoiceUploads, async (req, res) => {
             return res.status(502).json({ error: 'Could not store the invoice PDF.' });
         }
 
-        const { data: signedData, error: signedError } = await supabase.storage
-            .from(supabaseBucket)
-            .createSignedUrl(objectPath, SIGNED_URL_SECONDS, {
-                download: `${safeInvoiceNo}.pdf`
-            });
-
-        if (signedError || !signedData?.signedUrl) {
-            console.error('Supabase signed URL failed:', signedError?.message);
-            return res.status(502).json({ error: 'PDF was uploaded, but its share link could not be created.' });
-        }
-
+        // Return a short URL on this app. A fresh private Supabase URL is
+        // generated only when the customer opens the short link.
+        const baseUrl = process.env.APP_BASE_URL || `https://${req.get('host')}`;
         res.json({
             success: true,
-            url: signedData.signedUrl,
-            expiresIn: SIGNED_URL_SECONDS
+            url: `${baseUrl.replace(/\/$/, '')}/i/${shortId}`
         });
     } catch (err) {
         console.error('Invoice upload error:', err);
         res.status(500).json({ error: 'Unexpected error while sharing invoice.' });
+    }
+});
+
+app.get('/i/:id', async (req, res) => {
+    try {
+        const shortId = req.params.id;
+        if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(shortId)) {
+            return res.status(404).send('Invoice link not found.');
+        }
+        if (!supabase) {
+            return res.status(503).send('Invoice sharing is temporarily unavailable.');
+        }
+
+        const { data, error } = await supabase.storage
+            .from(supabaseBucket)
+            .createSignedUrl(`${shortId}.pdf`, SIGNED_URL_SECONDS, {
+                download: `OM_JEWELLERS_${shortId}.pdf`
+            });
+
+        if (error || !data?.signedUrl) {
+            console.error('Short invoice link resolution failed:', error?.message);
+            return res.status(404).send('This invoice link is invalid or the PDF is no longer available.');
+        }
+
+        res.redirect(302, data.signedUrl);
+    } catch (err) {
+        console.error('Short invoice link error:', err);
+        res.status(500).send('Could not open this invoice right now.');
     }
 });
 
