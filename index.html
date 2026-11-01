@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Om Jewellers - Billing & Inventory Management</title>
+  <title>Om Jewellers - Billing & KhataBook</title>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <style>
@@ -16,6 +16,7 @@
       --text: #2c2523;
       --text-muted: #6b635b;
       --accent-red: #c0392b;
+      --accent-green: #27ae60;
       --whatsapp: #25d366;
     }
 
@@ -30,6 +31,8 @@
       justify-content: space-between;
       align-items: center;
       border-bottom: 3px solid var(--primary);
+      flex-wrap: wrap;
+      gap: 10px;
     }
 
     header h1 {
@@ -38,16 +41,17 @@
       color: #dfba73;
     }
 
-    .nav-tabs { display: flex; gap: 10px; }
+    .nav-tabs { display: flex; gap: 8px; flex-wrap: wrap; }
 
     .tab-btn {
       background: transparent;
       border: 1px solid var(--primary);
       color: #dfba73;
-      padding: 8px 18px;
+      padding: 8px 14px;
       border-radius: 4px;
       cursor: pointer;
       font-weight: 500;
+      font-size: 0.9rem;
       transition: all 0.2s;
     }
 
@@ -87,6 +91,10 @@
     .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
     .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
 
+    @media(max-width: 768px) {
+      .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+    }
+
     .form-group {
       margin-bottom: 1rem;
       display: flex;
@@ -117,11 +125,14 @@
     .btn-whatsapp { background: var(--whatsapp); color: white; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
     .btn-whatsapp:hover { background: #1ebe57; }
     .btn-danger { background: var(--accent-red); color: white; }
+    .btn-success { background: var(--accent-green); color: white; }
 
     table {
       width: 100%;
       border-collapse: collapse;
       margin-top: 1rem;
+      overflow-x: auto;
+      display: block;
     }
 
     th, td {
@@ -129,14 +140,25 @@
       padding: 10px;
       text-align: left;
       font-size: 0.9rem;
+      white-space: nowrap;
     }
 
     th { background: #faf8f5; font-weight: 600; }
+
+    .badge {
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .badge-pending { background: #fde8e8; color: #c0392b; }
+    .badge-paid { background: #def7ec; color: #03543f; }
 
     .action-row {
       display: flex;
       gap: 10px;
       margin-top: 1.5rem;
+      flex-wrap: wrap;
     }
 
     @media print {
@@ -161,12 +183,13 @@
   <header>
     <div>
       <h1>OM JEWELLERS</h1>
-      <small style="color: #bbb;">Billing & Stock Desk</small>
+      <small style="color: #bbb;">Billing, Stock & KhataBook Desk</small>
     </div>
     <div class="nav-tabs no-print">
       <button class="tab-btn active" onclick="switchTab('billing')">Billing Pad</button>
       <button class="tab-btn" onclick="switchTab('inventory')">Stock Manager</button>
       <button class="tab-btn" onclick="switchTab('history')">Bill History</button>
+      <button class="tab-btn" onclick="switchTab('khata')">📖 KhataBook</button>
     </div>
   </header>
 
@@ -302,7 +325,7 @@
 
           <div class="action-row no-print">
             <button class="btn btn-primary" style="flex: 1;" onclick="handlePrintBill()">🖨️ Print Bill</button>
-            <button class="btn btn-whatsapp" style="flex: 1.5;" onclick="generateAndSendWhatsAppPDF()">📄 Send PDF to WhatsApp</button>
+            <button class="btn btn-whatsapp" style="flex: 1.5;" onclick="generateAndSendWhatsAppPDF()">📄 Send PDF & Save to Khata</button>
           </div>
         </div>
       </div>
@@ -376,11 +399,36 @@
         </table>
       </div>
     </div>
+
+    <!-- KHATABOOK SECTION -->
+    <div id="khata-tab" class="tab-content">
+      <div class="card">
+        <div class="section-title">📖 Customer KhataBook (Pending & Paid Ledger)</div>
+        <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1rem;">
+          Track pending balances, update payment statuses when customers pay, and send gentle payment reminders directly via WhatsApp.
+        </p>
+        <table>
+          <thead>
+            <tr>
+              <th>Invoice #</th>
+              <th>Customer Name</th>
+              <th>Phone</th>
+              <th>Total Amount (₹)</th>
+              <th>Status</th>
+              <th>Update Status</th>
+              <th>WhatsApp Reminder</th>
+            </tr>
+          </thead>
+          <tbody id="khata-list"></tbody>
+        </table>
+      </div>
+    </div>
   </div>
 
   <script>
     let inventory = [];
     let billHistory = [];
+    let khataBook = [];
     let invoiceItems = [];
     let currentInvoiceNo = 'OJ-1001';
 
@@ -400,6 +448,10 @@
             document.getElementById('bill-no').textContent = currentInvoiceNo;
           }
         }
+        if (data.khata) {
+          khataBook = data.khata;
+          renderKhata();
+        }
       } catch (e) {
         console.log('Using local fallback state');
       }
@@ -410,7 +462,7 @@
         await fetch('/api/data', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ inventory, bills: billHistory })
+          body: JSON.stringify({ inventory, bills: billHistory, khata: khataBook })
         });
       } catch (e) {
         console.error('Failed to sync with backend');
@@ -470,9 +522,12 @@
       } else if(tab === 'inventory') {
         document.getElementById('inventory-tab').classList.add('active');
         document.querySelectorAll('.tab-btn')[1].classList.add('active');
-      } else {
+      } else if(tab === 'history') {
         document.getElementById('history-tab').classList.add('active');
         document.querySelectorAll('.tab-btn')[2].classList.add('active');
+      } else {
+        document.getElementById('khata-tab').classList.add('active');
+        document.querySelectorAll('.tab-btn')[3].classList.add('active');
       }
     }
 
@@ -545,7 +600,18 @@
           itemsCount: invoiceItems.length,
           total: grandTotal
         });
+
+        // Add to KhataBook as Pending by default
+        khataBook.unshift({
+          invoiceNo: currentInvoiceNo,
+          customerName: custName,
+          phone: custPhone,
+          total: grandTotal,
+          status: 'Pending'
+        });
+
         renderHistory();
+        renderKhata();
         saveData();
       }
     }
@@ -586,10 +652,8 @@
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
       };
 
-      // 1. Download PDF to device automatically
       await html2pdf().set(opt).from(element).save();
 
-      // 2. Format WhatsApp text
       let message = `*OM JEWELLERS* - Tax Invoice\n`;
       message += `Invoice #: ${currentInvoiceNo}\n`;
       message += `Date: ${date}\n`;
@@ -601,6 +665,29 @@
 
       const encodedMsg = encodeURIComponent(message);
       window.open(`https://api.whatsapp.com/send?phone=${custPhone}&text=${encodedMsg}`, '_blank');
+    }
+
+    function updateKhataStatus(index, newStatus) {
+      khataBook[index].status = newStatus;
+      renderKhata();
+      saveData();
+    }
+
+    function sendKhataReminder(index) {
+      const entry = khataBook[index];
+      if (!entry.phone || entry.phone === '-') {
+        alert('Customer phone number is missing.');
+        return;
+      }
+
+      let message = `Namaste *${entry.customerName}* ji,\n\n`;
+      message += `This is a gentle reminder from *OM JEWELLERS* regarding your pending bill *#${entry.invoiceNo}*.\n`;
+      message += `*Pending Amount: ₹${entry.total}*\n\n`;
+      message += `Kindly clear your dues at your earliest convenience. Thank you!\n\n`;
+      message += `*Warm Regards,\nOM JEWELLERS*`;
+
+      const encodedMsg = encodeURIComponent(message);
+      window.open(`https://api.whatsapp.com/send?phone=${entry.phone}&text=${encodedMsg}`, '_blank');
     }
 
     function renderStock() {
@@ -633,6 +720,36 @@
           <td>${bill.phone}</td>
           <td>${bill.itemsCount} item(s)</td>
           <td><strong>₹${bill.total}</strong></td>
+        </tr>`;
+      });
+    }
+
+    function renderKhata() {
+      const tbody = document.getElementById('khata-list');
+      tbody.innerHTML = '';
+      if (khataBook.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted);">No Khata entries yet. Generate a bill to add entries here.</td></tr>`;
+        return;
+      }
+      khataBook.forEach((entry, index) => {
+        const badgeClass = entry.status === 'Paid' ? 'badge-paid' : 'badge-pending';
+        tbody.innerHTML += `<tr>
+          <td><strong>${entry.invoiceNo}</strong></td>
+          <td>${entry.customerName}</td>
+          <td>${entry.phone}</td>
+          <td><strong>₹${entry.total}</strong></td>
+          <td><span class="badge ${badgeClass}">${entry.status}</span></td>
+          <td>
+            <select onchange="updateKhataStatus(${index}, this.value)" style="padding: 4px; font-size: 0.85rem;">
+              <option value="Pending" ${entry.status === 'Pending' ? 'selected' : ''}>Pending</option>
+              <option value="Paid" ${entry.status === 'Paid' ? 'selected' : ''}>Paid Fully</option>
+            </select>
+          </td>
+          <td>
+            <button class="btn btn-whatsapp" style="padding: 6px 12px; font-size: 0.8rem;" onclick="sendKhataReminder(${index})">
+              💬 Send Reminder
+            </button>
+          </td>
         </tr>`;
       });
     }
