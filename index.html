@@ -842,15 +842,15 @@
           throw new Error(uploadResult.error || 'Could not upload the invoice PDF.');
         }
 
-        let message = `*OM JEWELLERS* - Tax Invoice\\n`;
-        message += `Invoice #: ${currentInvoiceNo}\\n`;
-        message += `Date: ${date}\\n`;
-        message += `Billed To: ${custName}\\n`;
-        message += `*Grand Total: ₹${grandTotal}*\\n\\n`;
-        message += `📄 *Your invoice PDF is ready. Open the link below:*\\n`;
-        message += `${uploadResult.url}\\n\\n`;
-        message += `_Thank you for choosing us!_\\n\\n`;
-        message += `*Warm Regards,\\nOM JEWELLERS*`;
+        let message = `*OM JEWELLERS* - Tax Invoice\n`;
+        message += `Invoice #: ${currentInvoiceNo}\n`;
+        message += `Date: ${date}\n`;
+        message += `Billed To: ${custName}\n`;
+        message += `*Grand Total: ₹${grandTotal}*\n\n`;
+        message += `Invoice PDF - Open this link:\n`;
+        message += `${uploadResult.url}\n\n`;
+        message += `_Thank you for choosing us!_\n\n`;
+        message += `*Warm Regards,\nOM JEWELLERS*`;
 
         whatsappTab.location.href = `https://wa.me/${phoneDigits}?text=${encodeURIComponent(message)}`;
       } catch (error) {
