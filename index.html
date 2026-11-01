@@ -729,13 +729,14 @@
     }
 
     async function generateAndSendWhatsAppPDF() {
-      const custName = document.getElementById('cust-name').value || 'Customer';
+      const custName = document.getElementById('cust-name').value.trim() || 'Customer';
       const custPhone = document.getElementById('cust-phone').value;
       const date = document.getElementById('bill-date').textContent;
       const grandTotal = document.getElementById('bill-total').textContent;
+      const phoneDigits = custPhone.replace(/\\D/g, '');
 
-      if (!custPhone) {
-        alert('Please enter customer phone number with country code (e.g. 9198XXXXXXXX)');
+      if (!phoneDigits || phoneDigits.length < 10 || phoneDigits.length > 15) {
+        alert('Please enter a valid customer phone number with country code (e.g. 9198XXXXXXXX).');
         return;
       }
 
@@ -744,30 +745,78 @@
         return;
       }
 
-      recordCurrentBill();
+      // Open the tab immediately from the button click so browser popup blockers
+      // do not block WhatsApp while the PDF is being generated and uploaded.
+      const whatsappTab = window.open('about:blank', '_blank');
+      if (!whatsappTab) {
+        alert('Please allow pop-ups for this site, then try sharing the invoice again.');
+        return;
+      }
+      whatsappTab.document.write('<p style="font-family:Arial;padding:24px">Preparing your invoice link…</p>');
 
-      const element = document.getElementById('printable-invoice');
-      const opt = {
-        margin: [10, 10, 10, 10],
-        filename: `OM_JEWELLERS_${currentInvoiceNo}.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2 },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-      };
+      try {
+        recordCurrentBill();
 
-      await html2pdf().set(opt).from(element).save();
+        const element = document.getElementById('printable-invoice');
+        const pdfElement = element.cloneNode(true);
 
-      let message = `*OM JEWELLERS* - Tax Invoice\n`;
-      message += `Invoice #: ${currentInvoiceNo}\n`;
-      message += `Date: ${date}\n`;
-      message += `Billed To: ${custName}\n`;
-      message += `*Grand Total (inc. 3% GST): ₹${grandTotal}*\n\n`;
-      message += `📎 *Your detailed PDF invoice has been downloaded.*\n\n`;
-      message += `_Thank you for choosing us!_\n\n`;
-      message += `*Warm Regards,\nOM JEWELLERS*`;
+        // Remove buttons, discount editor and other controls from the customer PDF.
+        pdfElement.querySelectorAll('.no-print').forEach(node => node.remove());
+        pdfElement.querySelectorAll('.table-responsive').forEach(node => {
+          node.style.overflow = 'visible';
+        });
+        pdfElement.style.width = '190mm';
+        pdfElement.style.maxWidth = '190mm';
+        pdfElement.style.margin = '0';
+        pdfElement.style.background = '#ffffff';
 
-      const encodedMsg = encodeURIComponent(message);
-      window.open(`https://api.whatsapp.com/send?phone=${custPhone}&text=${encodedMsg}`, '_blank');
+        const opt = {
+          margin: [10, 10, 10, 10],
+          filename: `OM_JEWELLERS_${currentInvoiceNo}.pdf`,
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+
+        const pdfBlob = await html2pdf().set(opt).from(pdfElement).outputPdf('blob');
+        if (!pdfBlob || pdfBlob.size === 0 || pdfBlob.size > 8 * 1024 * 1024) {
+          throw new Error('The generated PDF is empty or larger than 8 MB.');
+        }
+
+        const pdfBase64 = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(String(reader.result).split(',')[1]);
+          reader.onerror = () => reject(new Error('Could not read the generated PDF.'));
+          reader.readAsDataURL(pdfBlob);
+        });
+
+        const uploadResponse = await fetch('/api/invoices/upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pdfBase64, invoiceNo: currentInvoiceNo })
+        });
+        const uploadResult = await uploadResponse.json().catch(() => ({}));
+
+        if (!uploadResponse.ok || !uploadResult.url) {
+          throw new Error(uploadResult.error || 'Could not upload the invoice PDF.');
+        }
+
+        let message = `*OM JEWELLERS* - Tax Invoice\\n`;
+        message += `Invoice #: ${currentInvoiceNo}\\n`;
+        message += `Date: ${date}\\n`;
+        message += `Billed To: ${custName}\\n`;
+        message += `*Grand Total: ₹${grandTotal}*\\n\\n`;
+        message += `📄 *Your invoice PDF is ready. Open the link below:*\\n`;
+        message += `${uploadResult.url}\\n\\n`;
+        message += `_Thank you for choosing us!_\\n\\n`;
+        message += `*Warm Regards,\\nOM JEWELLERS*`;
+
+        whatsappTab.location.href = `https://wa.me/${phoneDigits}?text=${encodeURIComponent(message)}`;
+      } catch (error) {
+        console.error('WhatsApp invoice sharing failed:', error);
+        whatsappTab.close();
+        alert(error.message || 'Could not share the invoice. Please try again.');
+      }
     }
 
     function editBill(index) {
