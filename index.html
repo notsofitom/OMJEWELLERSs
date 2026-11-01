@@ -586,17 +586,55 @@
       document.getElementById('rate-display-20k').textContent = calculatedRates['Gold 20K'];
       document.getElementById('rate-display-18k').textContent = calculatedRates['Gold 18K'];
       document.getElementById('rate-display-14k').textContent = calculatedRates['Gold 14K'];
+      saveMetalRates();
     }
 
     function updateSilverRate() {
       const silverRate = parseFloat(document.getElementById('base-silver-rate').value) || 0;
       calculatedRates['Silver 925'] = silverRate;
       document.getElementById('rate-display-silver').textContent = silverRate;
+      saveMetalRates();
+    }
+
+    // Keep the latest manually entered rates in this browser until new rates are entered.
+    function saveMetalRates() {
+      try {
+        const rates = {
+          gold24k: parseFloat(document.getElementById('base-24k-rate').value),
+          silver: parseFloat(document.getElementById('base-silver-rate').value)
+        };
+        if (Number.isFinite(rates.gold24k) && rates.gold24k > 0 &&
+            Number.isFinite(rates.silver) && rates.silver > 0) {
+          localStorage.setItem('omJewellersMetalRates', JSON.stringify(rates));
+        }
+      } catch (error) {
+        console.warn('Could not save metal rates in this browser:', error);
+      }
+    }
+
+    function loadSavedMetalRates() {
+      try {
+        const saved = JSON.parse(localStorage.getItem('omJewellersMetalRates') || 'null');
+        if (!saved) return;
+        if (Number.isFinite(Number(saved.gold24k)) && Number(saved.gold24k) > 0) {
+          document.getElementById('base-24k-rate').value = Number(saved.gold24k);
+          calculatePurityRates();
+        }
+        if (Number.isFinite(Number(saved.silver)) && Number(saved.silver) > 0) {
+          document.getElementById('base-silver-rate').value = Number(saved.silver);
+          updateSilverRate();
+        }
+      } catch (error) {
+        console.warn('Could not restore saved metal rates:', error);
+      }
     }
 
     function lockDailyRates() {
-      alert("Today's metal rates have been locked!");
+      saveMetalRates();
+      alert('Metal rates saved in this browser. They will remain after refresh until you change them.');
     }
+
+    loadSavedMetalRates();
 
     function switchTab(tab) {
       document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
