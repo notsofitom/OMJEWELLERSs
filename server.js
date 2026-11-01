@@ -79,7 +79,7 @@ app.post('/api/invoices/upload', limitInvoiceUploads, async (req, res) => {
         }
 
         // Accept only a plain base64 payload, not a data URL or arbitrary content.
-        const normalizedBase64 = pdfBase64.replace(/^data:application\\/pdf;base64,/, '');
+        const normalizedBase64 = pdfBase64;
         if (!/^[A-Za-z0-9+/]+={0,2}$/.test(normalizedBase64)) {
             return res.status(400).json({ error: 'Invalid PDF encoding.' });
         }
