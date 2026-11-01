@@ -325,9 +325,15 @@
             </div>
           </div>
 
-          <div class="form-group">
+          <div class="form-group" style="margin-top: 0.5rem;">
+            <label for="include-gst" style="display: flex; align-items: center; gap: 8px;">
+              <input type="checkbox" id="include-gst" onchange="updateGstDisplay(); renderBill();" style="width: auto;">
+              Add GST to this bill? (Default: No)
+            </label>
+          </div>
+          <div class="form-group" id="gst-rate-group" style="display: none;">
             <label>GST Rate (%)</label>
-            <input type="number" id="gst-rate" value="3">
+            <input type="number" id="gst-rate" value="3" min="0" step="0.01" oninput="renderBill()">
           </div>
 
           <button class="btn btn-primary" style="width: 100%; margin-top: 5px;" onclick="addItemToInvoice()">Add Item to Bill</button>
@@ -377,7 +383,7 @@
 
           <div style="margin-top: 1rem; text-align: right; line-height: 1.5; font-size: 0.85rem;">
             <div>Subtotal: ₹<span id="bill-subtotal">0.00</span></div>
-            <div>GST (3%): ₹<span id="bill-gst">0.00</span></div>
+            <div id="bill-gst-row" style="display: none;">GST (<span id="bill-gst-rate">3</span>%): ₹<span id="bill-gst">0.00</span></div>
             <div id="discount-row" style="display: none; color: var(--accent-red);">Less / Discount: -₹<span id="bill-discount">0.00</span></div>
             <div style="font-size: 1.1rem; font-weight: 700; color: var(--primary-dark); margin-top: 4px;">
               Grand Total: ₹<span id="bill-total">0.00</span>
@@ -617,6 +623,12 @@
       document.getElementById('bill-cust-phone').textContent = document.getElementById('cust-phone').value || '-';
     }
 
+    function updateGstDisplay() {
+      const includeGst = document.getElementById('include-gst').checked;
+      document.getElementById('gst-rate-group').style.display = includeGst ? 'flex' : 'none';
+      document.getElementById('bill-gst-row').style.display = includeGst ? 'block' : 'none';
+    }
+
     function updateGstinDisplay() {
       const includeGstin = document.getElementById('include-gstin').checked;
       const gstinInputGroup = document.getElementById('gstin-input-group');
@@ -671,12 +683,15 @@
         </tr>`;
       });
 
-      const gst = subtotal * 0.03;
+      const includeGst = document.getElementById('include-gst').checked;
+      const gstRate = includeGst ? (parseFloat(document.getElementById('gst-rate').value) || 0) : 0;
+      const gst = subtotal * gstRate / 100;
       const discount = parseFloat(document.getElementById('discount-amt')?.value) || 0;
       const grandTotal = Math.max(0, subtotal + gst - discount);
 
       document.getElementById('bill-subtotal').textContent = subtotal.toFixed(2);
       document.getElementById('bill-gst').textContent = gst.toFixed(2);
+      document.getElementById('bill-gst-rate').textContent = gstRate.toString();
       
       const discountRow = document.getElementById('discount-row');
       if (discount > 0) {
